@@ -1,0 +1,9 @@
+repositories {
+    mavenCentral()
+    jcenter()
+    google()
+}
+dependencies {
+        classpath 'com.android.tools.build:gradle:3.3.2'
+    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:4.+'
+}
