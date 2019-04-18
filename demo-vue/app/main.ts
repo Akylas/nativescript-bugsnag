@@ -4,7 +4,7 @@ import { Client } from 'nativescript-bugsnag';
 
 const bugsnag = (Vue.prototype.$bugsnag = new Client());
 bugsnag
-    .init('94987257ab21a3ab7d6ac9240836071a')
+    .init('YOUR_API_KEY')
     .then(res => {
         bugsnag.enableConsoleBreadcrumbs();
         // bugsnag.handleUncaughtErrors();

@@ -47,6 +47,6 @@
 	</array>
 
 	<key>BugsnagAPIKey</key>
- 	<string>94987257ab21a3ab7d6ac9240836071a</string>
+ 	<string>YOUR_API_KEY</string>
 </dict>
 </plist>

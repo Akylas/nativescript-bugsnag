@@ -33,6 +33,6 @@
             </intent-filter>
         </activity>
         <activity android:name="com.tns.ErrorReportActivity"/>
-        <meta-data android:name="com.bugsnag.android.API_KEY" android:value="94987257ab21a3ab7d6ac9240836071a"/>
+        <meta-data android:name="com.bugsnag.android.API_KEY" android:value="YOUR_API_KEY"/>
     </application>
 </manifest>
