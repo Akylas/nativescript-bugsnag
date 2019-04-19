@@ -1,8 +1,7 @@
 import { BreadcrumbType, Configuration, NativePropertyOptions } from './bugsnag';
-import { isAndroid } from 'tns-core-modules/platform/platform';
-import { Observable } from 'tns-core-modules/data/observable/observable';
-import * as application from 'tns-core-modules/application/application';
-import * as trace from 'tns-core-modules/trace/trace';
+import { isAndroid } from 'tns-core-modules/platform';
+import * as application from 'tns-core-modules/application';
+import * as trace from 'tns-core-modules/trace';
 
 export const BREADCRUMB_MAX_LENGTH = 30;
 
@@ -25,25 +24,7 @@ export abstract class ClientBase {
 
     onNativeError(args) {
         if (this.config.autoNotify && this.config.shouldNotify()) {
-            console.log('onNativeError', args);
-            // this.notify(new Error())
-            // this.notify(
-            //     args.android ? args.android.nativeException : args.ios,
-            //     null,
-            //     true
-            //     // () => {
-            //     //     if (previousHandler) {
-            //     //         // Wait 150ms before terminating app, allowing native processing
-            //     //         // to complete, if any. On iOS in particular, there is no
-            //     //         // synchronous means ensure a report delivery attempt is
-            //     //         // completed before invoking callbacks.
-            //     //         setTimeout(() => {
-            //     //             previousHandler(error, isFatal);
-            //     //         }, 150);
-            //     //     }
-            //     // },
-            //     // new HandledState('error', true, 'unhandledException')
-            // );
+            clog('onNativeError', args);
         }
     }
     /**
@@ -55,45 +36,18 @@ export abstract class ClientBase {
 
         const errorHandler: trace.ErrorHandler = {
             handlerError(err) {
-                console.log('handlerError', err);
+                clog('handlerError', err);
                 this.onNativeError(err);
             }
         };
         trace.setErrorHandler(errorHandler);
-        // if (ErrorUtils) {
-        //     const previousHandler = ErrorUtils.getGlobalHandler();
-        //     ErrorUtils.setGlobalHandler((error, isFatal) => {
-        //         if (this.config.autoNotify && this.config.shouldNotify()) {
-        //             this.notify(
-        //                 error,
-        //                 null,
-        //                 true,
-        //                 () => {
-        //                     if (previousHandler) {
-        //                         // Wait 150ms before terminating app, allowing native processing
-        //                         // to complete, if any. On iOS in particular, there is no
-        //                         // synchronous means ensure a report delivery attempt is
-        //                         // completed before invoking callbacks.
-        //                         setTimeout(() => {
-        //                             previousHandler(error, isFatal);
-        //                         }, 150);
-        //                     }
-        //                 },
-        //                 new HandledState('error', true, 'unhandledException')
-        //             );
-        //         } else if (previousHandler) {
-        //             previousHandler(error, isFatal);
-        //         }
-        //     });
-        // }
     }
 
     abstract getBreadcrumbType(str: string): any;
     enableConsoleBreadcrumbs() {
-        console.log('enableConsoleBreadcrumbs');
+        clog('enableConsoleBreadcrumbs');
         Object.keys(originalConsoleFuncs).forEach(method => {
             console[method] = (...args) => {
-                originalConsoleFuncs['log']('calling Breadcrumbs for', method, args);
                 originalConsoleFuncs[method].apply(console, args);
                 try {
                     this.leaveBreadcrumb('Console', this.getBreadcrumbType('LOG'), {
@@ -129,6 +83,7 @@ export abstract class ClientBase {
         });
     }
     notify(error, beforeSendCallback?, blocking?, postSendCallback?, _handledState?) {
+        clog('notify', typeof error, error, error.message, error.stack);
         if (!(error instanceof Error)) {
             if (postSendCallback) {
                 postSendCallback(false);
@@ -174,27 +129,27 @@ export abstract class ClientBase {
 }
 
 export function createGetter(key: string, options: NativePropertyOptions) {
-    // console.log('createGetter', key, options);
+    // clog('createGetter', key, options);
     const nativeGetterName = ((isAndroid ? options.android : options.ios) || options).nativeGetterName || 'get' + key.charAt(0).toUpperCase() + key.slice(1);
     const converter = options.converter;
     return function() {
         let result;
-        // console.log('getter', key, nativeGetterName);
+        // clog('getter', key, nativeGetterName);
         if (this.native && this.native[nativeGetterName]) {
             result = this.native[nativeGetterName]();
         } else {
             result = this.options[key] || options.defaultValue;
         }
         result = converter ? converter.fromNative.call(this, result, key) : result;
-        // console.log('getter', key, options, nativeGetterName, !!getConverter, result);
+        // clog('getter', key, options, nativeGetterName, !!getConverter, result);
         return result;
     };
 }
 export function createSetter(key, options: NativePropertyOptions) {
-    // console.log('createSetter', key, options);
+    // clog('createSetter', key, options);
     const nativeSetterName = ((isAndroid ? options.android : options.ios) || options).nativeSetterName || 'set' + key.charAt(0).toUpperCase() + key.slice(1);
     return function(newVal) {
-        console.log('setter', key, newVal, Array.isArray(newVal), typeof newVal, nativeSetterName, this.native && this.native[nativeSetterName]);
+        // clog('setter', key, newVal, Array.isArray(newVal), typeof newVal, nativeSetterName, this.native && this.native[nativeSetterName]);
         this.options[key] = newVal;
         if (this.native && typeof this.native[nativeSetterName] === 'function') {
             const actualVal = options.converter ? options.converter.toNative.call(this, newVal, key) : newVal;

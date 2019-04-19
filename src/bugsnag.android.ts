@@ -1,6 +1,8 @@
 import { BaseNative, BREADCRUMB_MAX_LENGTH, ClientBase, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
-import * as application from 'tns-core-modules/application/application';
+import { knownFolders } from 'tns-core-modules/file-system';
+import * as application from 'tns-core-modules/application';
 import { ConfigurationOptions, NativePropertyOptions } from './bugsnag';
+const appPath = knownFolders.currentApp().path + '/';
 
 export enum BreadcrumbType {
     ERROR = 'ERROR',
@@ -55,18 +57,6 @@ function getNativeHashMap(obj: { [k: string]: string }) {
     });
     return map;
 }
-function getNativeStackTrace(error: Error) {
-    if (!error || !error.stack) {
-        return null;
-    }
-    const stack = error.stack.split('\n');
-    const array = Array.create(java.lang.StackTraceElement, stack.length);
-    stack.forEach((s, i) => {
-        array[i] = s;
-    });
-
-    return array;
-}
 
 let JavaScriptException: JavaScriptException;
 
@@ -81,7 +71,7 @@ function initJavaScriptException() {
         return;
     }
 
-    const stackTraceRegex = /at\s*(.*)\s*\((.*?):([0-9]+):([0-9]+)\)/g;
+    const stackTraceRegex = /at\s*?([^\(]*)?\s*\(?file:\/\/([^:\n]*)(?::([0-9]+))?(?::([0-9]+))?\)?/g;
 
     // @JavaProxy('com.nativescript.bugsnag.JavascriptException')
     @Interfaces([com.bugsnag.android.JsonStream.Streamable])
@@ -101,21 +91,31 @@ function initJavaScriptException() {
             writer.name('errorClass').value(this.name);
             writer.name('message').value(this.getLocalizedMessage());
             writer.name('type').value(this.EXCEPTION_TYPE);
-
+            // clog('toStream', appPath, this.rawStacktrace);
             if (this.rawStacktrace) {
                 writer.name('stacktrace');
                 writer.beginArray();
                 let match = stackTraceRegex.exec(this.rawStacktrace);
+                // clog('toStream', 'rawStacktrace', this.rawStacktrace, match);
                 while (match != null) {
                     writer.beginObject();
-                    writer.name('method').value(match[1]);
+                    if (match[1]) {
+                        writer.name('method').value(match[1]);
+                    }
                     writer.name('columnNumber').value(parseInt(match[4], 10));
                     writer.name('lineNumber').value(parseInt(match[3], 10));
-                    writer.name('file').value(match[2]);
+                    if (match[2]) {
+                        writer.name('file').value(match[2].replace(appPath, ''));
+                    }
                     writer.endObject();
                     // matched text: match[0]
                     // match start: match.index
                     // capturing group n: match[n]
+                    // clog('adding stacktrace:');
+                    // clog('   method:', match[1]);
+                    // clog('   columnNumber:', match[4], parseInt(match[4], 10));
+                    // clog('   lineNumber:', match[3], parseInt(match[3], 10));
+                    // clog('   file:', match[2], match[2].replace(appPath, ''));
                     match = stackTraceRegex.exec(this.rawStacktrace);
                 }
                 writer.endArray();
@@ -207,8 +207,8 @@ export class Client extends ClientBase {
         return getBreadcrumbType(str);
     }
     runInit() {
-        application.off(application.launchEvent, this.runInit, this);
         const currentContext = application.android.context as android.content.Context;
+        // clog('Bugnsag', 'runInit1', currentContext);
         if (currentContext) {
             this._client = com.bugsnag.android.Bugsnag.init(currentContext, this.config.getNative());
 
@@ -221,14 +221,18 @@ export class Client extends ClientBase {
                 .getClass()
                 .getPackage()
                 .getSpecificationVersion();
+            // clog('Bugnsag', 'did init', this.libraryVersion, this.bugsnagAndroidVersion);
         }
     }
-    init(conf: Configuration | string): Promise<any> {
+    init(conf: Configuration | ConfigurationOptions | string): Promise<any> {
+        // clog('Bugnsag', 'init', conf, !!this._client, knownFolders.currentApp().path, application.launchEvent);
         if (!this._client) {
-            this.config = conf instanceof Configuration ? conf : new Configuration({ apiKey: conf });
+            this.config = conf instanceof Configuration ? conf : new Configuration(typeof conf === 'object' ? conf : { apiKey: conf });
             return new Promise((resolve, reject) => {
                 const onLaunched = () => {
                     try {
+                        // clog('Bugnsag', 'onLaunched');
+                        application.off(application.launchEvent, onLaunched);
                         this.runInit();
                         resolve(this._client);
                     } catch (ex) {
@@ -236,14 +240,12 @@ export class Client extends ClientBase {
                         reject(ex);
                     }
                 };
-                if (application.android.startActivity) {
+                // clog('Bugnsag', 'will init', !!application.android.nativeApp, !!application.android.context, !!application.android.startActivity);
+
+                if (application.android.nativeApp) {
                     onLaunched();
                 } else {
-                    const onLaunched = () => {
-                        application.off(application.launchEvent, onLaunched);
-                        this.runInit();
-                        resolve(this._client);
-                    };
+                    // console.log('Bugnsag', 'will init on launchEvent');
                     application.on(application.launchEvent, onLaunched);
                 }
             });
@@ -321,6 +323,7 @@ export class Client extends ClientBase {
             const exc = new JavaScriptException(errorMessage);
             exc.name = errorClass;
             exc.rawStacktrace = rawStacktrace;
+            // clog('handleNotify', exc, exc.rawStacktrace);
 
             initDiagnosticsCallback();
             const handler = new DiagnosticsCallback(this.libraryVersion, this.bugsnagAndroidVersion, options);
@@ -374,6 +377,7 @@ export class Configuration extends BaseNative<com.bugsnag.android.Configuration,
     automaticallyCollectBreadcrumbs: boolean;
 
     createNative(options?: ConfigurationOptions) {
+        clog('Configuration', 'createNative', options);
         return new com.bugsnag.android.Configuration(options.apiKey);
     }
     /**

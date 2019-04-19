@@ -91,7 +91,7 @@ export class Configuration extends BaseNative<any, ConfigurationOptions> {
 }
 export class Client {
     conf: Configuration;
-    init(conf: Configuration | string): Promise<any>;
+    init(conf: Configuration | ConfigurationOptions | string): Promise<any>;
     /**
      * Leaves a 'breadcrumb' log message. The most recent breadcrumbs
      * are attached to subsequent error reports.

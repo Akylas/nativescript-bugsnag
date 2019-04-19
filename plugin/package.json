@@ -1,6 +1,6 @@
 {
     "name": "nativescript-bugsnag",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "main": "./bugsnag.js",
     "typings": "./bugsnag.d.ts",
     "repository": {

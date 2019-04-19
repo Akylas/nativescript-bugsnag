@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "es5",
         "module": "es2015",
+        "moduleResolution": "node",
         "declaration": true,
         "removeComments": false,
         "noLib": false,
@@ -22,7 +23,7 @@
         "outDir": "./plugin",
         "rootDir": "src",
         "paths": {
-            "nativescript-opencv": ["./src"],
+            "nativescript-bugsnag": ["./src"],
             "*": ["./node_modules/tns-core-modules/*", "./node_modules/*"]
         }
     },

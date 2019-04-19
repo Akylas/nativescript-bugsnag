@@ -193,9 +193,9 @@ export class Client extends ClientBase {
     getBreadcrumbType(str: string) {
         return BreadcrumbType[str];
     }
-    init(conf: Configuration | string): Promise<any> {
+    init(conf: Configuration | ConfigurationOptions | string): Promise<any> {
         if (!this._initialized) {
-            this.config = conf instanceof Configuration ? conf : new Configuration({ apiKey: conf });
+            this.config = conf instanceof Configuration ? conf : new Configuration(typeof conf === 'object' ? conf : { apiKey: conf });
             return new Promise((resolve, reject) => {
                 const nConfig = this.config.getNative();
                 Bugsnag.startBugsnagWithConfiguration(nConfig);
