@@ -1,6 +1,3 @@
-
-
 dependencies {
     implementation 'com.bugsnag:bugsnag-android-ndk:4.+'
 }
-apply plugin: 'com.bugsnag.android.gradle'
