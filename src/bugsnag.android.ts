@@ -39,8 +39,11 @@ export function nativeProperty(...args) {
     }
 }
 
-function getBreadcrumbType(str: string) {
-    return com.bugsnag.android.BreadcrumbType.valueOf(str);
+function getBreadcrumbType(value: string | com.bugsnag.android.BreadcrumbType) {
+    if (typeof value === 'string') {
+        return com.bugsnag.android.BreadcrumbType.valueOf(value);
+    }
+    return value;
 }
 function getNativeHashMap(obj: { [k: string]: string }) {
     if (!obj) {
