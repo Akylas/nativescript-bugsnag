@@ -1,0 +1,38 @@
+{
+  github: {
+    dataType: 'issues',
+    changelog: {
+      outputPath: '../CHANGELOG.md',
+      ignoredLabels: ['DX', 'invalid', 'discussion'],
+      bug: {
+        title: '#### Fixes (bugs & defects):',
+        labels: ['bug', 'defect']
+      },
+      breaking: {
+        title: '#### Breaking:',
+        labels: ['breaking']
+      },
+      feature: {
+        title: '#### New features:'
+      }
+    }
+  },
+  publish: {
+    branch: 'master',
+    inSyncWithRemote: true,
+    noUncommittedChanges: true,
+    noUntrackedFiles: true,
+    validNpmCredentials: true,
+    validGithubToken: true,
+    packageFilesFilter: 'files',
+    npmVersionConfirmation: true
+  },
+  tasks: {
+    validations: true,
+    'npm-publish': null,
+    'npm-version': null,
+    'gh-release': null,
+    'gh-release-all': false,
+    changelog: null
+  }
+}
