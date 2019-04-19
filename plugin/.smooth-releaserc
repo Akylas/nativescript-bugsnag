@@ -24,7 +24,7 @@
     noUntrackedFiles: true,
     validNpmCredentials: true,
     validGithubToken: true,
-    packageFilesFilter: 'files',
+    packageFilesFilter: 'npmignore',
     npmVersionConfirmation: true
   },
   tasks: {
