@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "tsc": "tsc -skipLibCheck && cp src/bugsnag.d.ts plugin",
-        "build": "npm run tsc && \\cp README.md plugin/ && \\cp src/package.json plugin/",
+        "build": "npm run tsc && \\cp README.md plugin/",
         "demo.ios": "npm i && npm run tsc && cd demo && tns run ios",
         "demo.android": "npm i && npm run tsc && cd demo && tns run android",
         "clean.demo": "rimraf demo/hooks demo/node_modules demo/platforms",
