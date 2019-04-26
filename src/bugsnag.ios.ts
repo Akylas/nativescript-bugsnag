@@ -283,7 +283,10 @@ export class Client extends ClientBase {
         return Promise.reject('not_initialized');
     }
 }
-
+function onBeforeSendReport(rawData, report: BugsnagCrashReport) {
+    clog('onBeforeSendReport', report);
+    return true;
+}
 export class Configuration extends BaseNative<BugsnagConfiguration, ConfigurationOptions> {
     @nativeProperty apiKey: string;
     autoNotify: boolean = true;
@@ -309,7 +312,9 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
     @nativeProperty automaticallyCollectBreadcrumbs: boolean;
 
     createNative(options?: ConfigurationOptions) {
-        return BugsnagConfiguration.new();
+        const result = BugsnagConfiguration.new();
+        result.addBeforeSendBlock(onBeforeSendReport);
+        return result;
     }
     /**
      * Whether reports should be sent to Bugsnag, based on the release stage
@@ -317,6 +322,12 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
      */
     shouldNotify() {
         return !this.options.releaseStage || !this.options.notifyReleaseStages || this.options.notifyReleaseStages.indexOf(this.options.releaseStage) !== -1;
+    }
+
+    set beforeSend(callback) {
+        this.getNative().addBeforeSendBlock(function(rawData, report) {
+            return callback(report);
+        });
     }
     // public getMetaData(): com.bugsnag.android.MetaData;
     // public setMetaData(param0: com.bugsnag.android.MetaData): void;

@@ -340,6 +340,15 @@ export class Client extends ClientBase {
     }
 }
 
+function onBeforeNotifyError(error: com.bugsnag.android.Error) {
+
+    if (error.getExceptionName() === 'com.tns.NativeScriptException') {
+        return false;
+    }
+    clog('onBeforeNotifyError', error.getExceptionName(), error.getExceptionMessage(), error.getGroupingHash(), error.getDeviceData(), error.getSeverity().getName(), error.getContext());
+    return true;
+}
+
 export class Configuration extends BaseNative<com.bugsnag.android.Configuration, ConfigurationOptions> {
     apiKey: string;
     autoNotify: boolean = true;
@@ -378,7 +387,23 @@ export class Configuration extends BaseNative<com.bugsnag.android.Configuration,
 
     createNative(options?: ConfigurationOptions) {
         clog('Configuration', 'createNative', options);
-        return new com.bugsnag.android.Configuration(options.apiKey);
+        const result = new com.bugsnag.android.Configuration(options.apiKey);
+        result.beforeNotify(
+            new com.bugsnag.android.BeforeNotify({
+                run: onBeforeNotifyError
+            })
+        );
+        return result;
+    }
+
+    set beforeSend(callback) {
+        this.getNative().beforeSend(
+            new com.bugsnag.android.BeforeSend({
+                run(report) {
+                    return callback(report);
+                }
+            })
+        );
     }
     /**
      * Whether reports should be sent to Bugsnag, based on the release stage

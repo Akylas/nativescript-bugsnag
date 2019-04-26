@@ -53,7 +53,7 @@ export interface ConfigurationOptions {
 }
 
 export enum BreadcrumbType {
-    errors,
+    ERROR,
     LOG,
     MANUAL,
     NAVIGATION ,

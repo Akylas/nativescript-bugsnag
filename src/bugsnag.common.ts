@@ -24,7 +24,29 @@ export abstract class ClientBase {
 
     onNativeError(args) {
         if (this.config.autoNotify && this.config.shouldNotify()) {
-            clog('onNativeError', args);
+            const error = args.error as any;
+            // const nErrror = args.android as java.lang.Exception;
+            // clog('onNativeError', error, Object.keys(args), Object.keys(error), error.message, error.stackTrace);
+            // clog('nErrror', nErrror);
+            clog('nativeException', error.message, error.stack);
+
+            // const array  = /(?:.*?)\s*\ncom\.tns\.NativeScriptException:\s*\n((?:.|[\r\n])*)StackTrace:((?:.|[\r\n])*)/mg.exec(error.stackTrace)
+            // clog('array', error.stackTrace.replace(/(\n|\t|\r)/g, '$$$'), array);
+            this.handleNotify({
+                apiKey: this.config.apiKey,
+                // context: 'NativeScriptActivity',
+                errorClass: 'NativeScriptError',
+                errorMessage: error.message,
+                // groupingHash: undefined,
+                // metadata: undefined,
+                severity: 'error',
+                stacktrace: error.stack,
+                // user: {},
+                // defaultSeverity: true,
+                // blocking: false,
+                // unhandled: true,
+                severityReason: 'unhandledException'
+            }).catch(err => {});
         }
     }
     /**
@@ -33,7 +55,23 @@ export abstract class ClientBase {
      */
     handleUncaughtErrors() {
         application.on(application.uncaughtErrorEvent, this.onNativeError, this);
-
+        application.on(application.discardedErrorEvent, this.onNativeError, this);
+        // application.on(application.discardedErrorEvent, function(args: application.DiscardedErrorEventData) {
+        //     console.log("### [discarded] NativeScriptError: " + args.error);
+        //     console.log("### [discarded] nativeException: " + (<any>args.error).nativeException);
+        //     console.log(`### [discarded] stackTrace: '${(<any>args.error).stackTrace}'`);
+        //     console.log(`### [discarded] error message: '${error.message}'`);
+        //     console.log(`### [discarded] stack: '${args.error.stack}'`);
+        // });
+        // application.on(application.uncaughtErrorEvent, function(args: application.UnhandledErrorEventData) {
+        //     const error = args.error as any;
+        //     console.log("### [uncaught] NativeScriptError: ", error);
+        //     console.log("### [uncaught] nativeException: ", error.nativeException);
+        //     console.log(`### [uncaught] stackTrace: '${error.stackTrace}'`);
+        //     console.log(`### [uncaught] error message: '${error.message}'`);
+        //     console.log(`### [uncaught] stack: '${error.stack}'`);
+        // });
+        // trace.setErrorHandler is for manual triggered error ?
         const errorHandler: trace.ErrorHandler = {
             handlerError(err) {
                 clog('handlerError', err);
@@ -82,7 +120,7 @@ export abstract class ClientBase {
             console[method] = originalConsoleFuncs[method];
         });
     }
-    notify(error, beforeSendCallback?, blocking?, postSendCallback?, _handledState?) {
+    notify(error, beforeSendReportCallback?, blocking?, postSendCallback?, _handledState?) {
         clog('notify', typeof error, error, error.message, error.stack);
         if (!(error instanceof Error)) {
             if (postSendCallback) {
@@ -113,18 +151,25 @@ export abstract class ClientBase {
             }
         }
 
-        if (beforeSendCallback) {
-            beforeSendCallback(report);
+        if (beforeSendReportCallback) {
+            beforeSendReportCallback(report);
         }
 
         const payload: any = report.toJSON();
         payload.blocking = !!blocking;
 
-        return this.handleNotify(payload).then(() => {
-            if (postSendCallback) {
-                postSendCallback();
-            }
-        });
+        return this.handleNotify(payload)
+            .then(() => {
+                if (postSendCallback) {
+                    postSendCallback();
+                }
+            })
+            .catch(err => {
+                if (postSendCallback) {
+                    postSendCallback(false);
+                }
+                return Promise.reject(err);
+            });
     }
 }
 

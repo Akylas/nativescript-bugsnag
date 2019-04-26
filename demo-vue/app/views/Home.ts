@@ -11,6 +11,7 @@ export default {
         <Button text="leaveBreadcrumb2" @tap="leaveBreadcrumb2"/>
         <Button text="notify" @tap="notify"/>
         <Button text="throwError" @tap="throwError"/>
+        <Button text="crashTest" @tap="crashTest"/>
       </StackLayout>
     </Page>
     `,
@@ -32,6 +33,9 @@ export default {
         },
         leaveBreadcrumb2() {
             this.$bugsnag.leaveBreadcrumb('leaveBreadcrumb', BreadcrumbType.ERROR, { toto: 1, tata: 'test' });
+        },
+        crashTest() {
+            this.thisShouldCrash();
         }
     }
 };
