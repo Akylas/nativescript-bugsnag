@@ -16,14 +16,17 @@ export interface NativePropertyOptions {
     defaultValue?: any;
     nativeGetterName?: string;
     nativeSetterName?: string;
+    nativeKey?: string;
     getConverter?: Function;
     ios?: {
         nativeGetterName?: string;
         nativeSetterName?: string;
+        nativeKey?: string;
     };
     android?: {
         nativeGetterName?: string;
         nativeSetterName?: string;
+        nativeKey?: string;
     };
 }
 
@@ -66,10 +69,10 @@ export enum BreadcrumbType {
 export class Configuration extends BaseNative<any, ConfigurationOptions> {
     apiKey: string;
     autoNotify: boolean;
-    sendThreads: boolean;
+    sendThreads?: boolean;
     autoCaptureSessions: boolean;
-    detectAnrs: boolean;
-    enableExceptionHandler: boolean;
+    detectAnrs?: boolean;
+    enableExceptionHandler?: boolean;
     appVersion: string;
     buildUUID: string;
     sessionEndpoint: string;
@@ -77,14 +80,14 @@ export class Configuration extends BaseNative<any, ConfigurationOptions> {
     codeBundleId: string;
     releaseStage: string;
     context: string;
-    anrThresholdMs: number;
-    launchCrashThresholdMs: number;
-    maxBreadcrumbs: number;
-    notifierType: number;
-    persistUserBetweenSessions: boolean;
-    ignoreClasses: boolean;
-    notifyForReleaseStage: boolean;
-    automaticallyCollectBreadcrumbs: boolean;
+    anrThresholdMs?: number;
+    launchCrashThresholdMs?: number;
+    maxBreadcrumbs?: number;
+    notifierType: string;
+    persistUserBetweenSessions?: boolean;
+    ignoreClasses?: boolean;
+    notifyForReleaseStage?: boolean;
+    automaticallyCollectBreadcrumbs?: boolean;
     notifyReleaseStages: string[];
     shouldNotify(): boolean;
     beforeSendCallbacks?

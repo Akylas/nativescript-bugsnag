@@ -57,7 +57,7 @@ function getNativeStackTrace(error: Error) {
     return array;
 }
 
-const stackTraceRegex = /(.*)@(?:(.*):([0-9]+):([0-9]+)|(\[.*\]))/g;
+const stackTraceRegex = /(?:(.*)@)?(?:(.*):([0-9]+):([0-9]+)|(\[.*\]))/g;
 
 function BSGParseJavaScriptStacktrace(stacktrace: string) {
     if (!stacktrace) {
@@ -66,7 +66,6 @@ function BSGParseJavaScriptStacktrace(stacktrace: string) {
     const frames = NSMutableArray.new();
     let match = stackTraceRegex.exec(stacktrace);
     const bundleURL = NSBundle.mainBundle.bundleURL;
-
     while (match != null) {
         const frame = NSMutableDictionary.new();
         frame.setObjectForKey(match[1], 'method');
@@ -260,6 +259,7 @@ export class Client extends ClientBase {
     }
 
     handleNotify(options) {
+        clog('handleNotify', options, this._initialized);
         if (this._initialized) {
             return new Promise(resolve => {
                 const exception = NSException.exceptionWithNameReasonUserInfo(options.errorClass || 'JavascriptError', options.errorMessage, null);
@@ -291,10 +291,10 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
     @nativeProperty apiKey: string;
     autoNotify: boolean = true;
     notifyReleaseStages: string[];
-    @nativeProperty sendThreads: boolean;
-    @nativeProperty autoCaptureSessions: boolean;
-    @nativeProperty detectAnrs: boolean;
-    @nativeProperty enableExceptionHandler: boolean;
+    @nativeProperty({
+        nativeKey: 'shouldAutoCaptureSessions'
+    })
+    autoCaptureSessions: boolean;
     @nativeProperty appVersion: string;
     @nativeProperty buildUUID: string;
     @nativeProperty sessionEndpoint: string;
@@ -302,13 +302,7 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
     @nativeProperty codeBundleId: string;
     @nativeProperty releaseStage: string;
     @nativeProperty context: string;
-    @nativeProperty anrThresholdMs: number;
-    @nativeProperty launchCrashThresholdMs: number;
-    @nativeProperty maxBreadcrumbs: number;
-    @nativeProperty notifierType: number;
-    @nativeProperty persistUserBetweenSessions: boolean;
-    @nativeProperty ignoreClasses: boolean;
-    @nativeProperty notifyForReleaseStage: boolean;
+    @nativeProperty notifierType: string;
     @nativeProperty automaticallyCollectBreadcrumbs: boolean;
 
     createNative(options?: ConfigurationOptions) {

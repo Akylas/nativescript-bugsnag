@@ -121,7 +121,7 @@ export abstract class ClientBase {
         });
     }
     notify(error, beforeSendReportCallback?, blocking?, postSendCallback?, _handledState?) {
-        clog('notify', typeof error, error, error.message, error.stack);
+        clog('notify', error instanceof Error, typeof error, error, error.message, error.stack);
         if (!(error instanceof Error)) {
             if (postSendCallback) {
                 postSendCallback(false);
@@ -200,8 +200,9 @@ export function createSetter(key, options: NativePropertyOptions) {
             const actualVal = options.converter ? options.converter.toNative.call(this, newVal, key) : newVal;
             this.native[nativeSetterName](actualVal);
         } else {
+            const actualKey = ((isAndroid ? options.android : options.ios) || options).nativeKey || key;
             const actualVal = options.converter ? options.converter.toNative.call(this, newVal, key) : newVal;
-            this.native[key] = actualVal;
+            this.native[actualKey] = actualVal;
             this._buildStyle = null;
         }
         // this.notify({ object: this, eventName: Observable.propertyChangeEvent, propertyName: key, value: actualVal });

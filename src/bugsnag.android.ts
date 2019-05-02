@@ -71,7 +71,7 @@ function initJavaScriptException() {
         return;
     }
 
-    const stackTraceRegex = /at\s*?([^\(]*)?\s*\(?file:\/\/([^:\n]*)(?::([0-9]+))?(?::([0-9]+))?\)?/g;
+    const stackTraceRegex = /at\s*?([^\(]*)?\s*\(?(?:file:\/\/|\/webpack:)([^:\n]*)(?::([0-9]+))?(?::([0-9]+))?\)?/g;
 
     // @JavaProxy('com.nativescript.bugsnag.JavascriptException')
     @Interfaces([com.bugsnag.android.JsonStream.Streamable])
@@ -370,7 +370,7 @@ export class Configuration extends BaseNative<com.bugsnag.android.Configuration,
     @nativeProperty anrThresholdMs: number;
     @nativeProperty launchCrashThresholdMs: number;
     @nativeProperty maxBreadcrumbs: number;
-    @nativeProperty notifierType: number;
+    @nativeProperty notifierType: string;
     @nativeProperty persistUserBetweenSessions: boolean;
     @nativeProperty({
         nativeSetterName: 'shouldIgnoreClass'
