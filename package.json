@@ -4,6 +4,7 @@
     "scripts": {
         "tsc": "tsc -skipLibCheck && cp src/bugsnag.d.ts plugin",
         "build": "npm run tsc && \\cp README.md plugin/",
+        "publish": "npm run build && lerna publish",
         "demo.ios": "npm i && npm run tsc && cd demo && tns run ios",
         "demo.android": "npm i && npm run tsc && cd demo && tns run android",
         "clean.demo": "rimraf demo/hooks demo/node_modules demo/platforms",
