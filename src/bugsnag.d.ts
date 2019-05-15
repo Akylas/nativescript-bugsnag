@@ -1,4 +1,3 @@
-
 export abstract class BaseNative<T, U extends {}> {
     options?: U;
     native: T;
@@ -59,7 +58,7 @@ export enum BreadcrumbType {
     ERROR,
     LOG,
     MANUAL,
-    NAVIGATION ,
+    NAVIGATION,
     PROCESS,
     REQUEST,
     STATE,
@@ -90,7 +89,15 @@ export class Configuration extends BaseNative<any, ConfigurationOptions> {
     automaticallyCollectBreadcrumbs?: boolean;
     notifyReleaseStages: string[];
     shouldNotify(): boolean;
-    beforeSendCallbacks?
+    beforeSendCallbacks?;
+}
+
+export interface NotifyOptions {
+    error: Error | string;
+    metadata?: { [k: string]: any };
+    beforeSendReportCallback?: (report)=>void;
+    blocking?: boolean;
+    postSendCallback?: (value?:boolean)=>void;
 }
 export class Client {
     conf: Configuration;
@@ -111,11 +118,12 @@ export class Client {
     /**
      * Sends an error report to Bugsnag
      * @param error               The error instance to report
+     * @param metadata            Optional metadata
      * @param beforeSendCallback  A callback invoked before the report is sent
      *                            so additional information can be added
      * @param postSendCallback    Callback invoked after request is queued
      */
-    notify(error: Error | string, beforeSendCallback?, postSendCallback?);
+    notify(options: NotifyOptions | Error | string);
     /**
      * Starts tracking a new session. You should disable automatic session tracking via
      * `autoCaptureSessions` if you call this method.

@@ -284,7 +284,7 @@ export class Client extends ClientBase {
     }
 }
 function onBeforeSendReport(rawData, report: BugsnagCrashReport) {
-    clog('onBeforeSendReport', report);
+    clog('onBeforeSendReport', report, report.errorMessage, report.errorClass, report.error);
     return true;
 }
 export class Configuration extends BaseNative<BugsnagConfiguration, ConfigurationOptions> {

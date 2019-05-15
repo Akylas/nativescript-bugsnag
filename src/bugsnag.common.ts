@@ -1,4 +1,4 @@
-import { BreadcrumbType, Configuration, NativePropertyOptions } from './bugsnag';
+import { BreadcrumbType, Configuration, NativePropertyOptions, NotifyOptions } from './bugsnag';
 import { isAndroid } from 'tns-core-modules/platform';
 import * as application from 'tns-core-modules/application';
 import * as trace from 'tns-core-modules/trace';
@@ -24,7 +24,7 @@ export abstract class ClientBase {
 
     onNativeError(args) {
         if (this.config.autoNotify && this.config.shouldNotify()) {
-            const error = args.error as any;
+            const error = args.error;
             // const nErrror = args.android as java.lang.Exception;
             // clog('onNativeError', error, Object.keys(args), Object.keys(error), error.message, error.stackTrace);
             // clog('nErrror', nErrror);
@@ -120,53 +120,58 @@ export abstract class ClientBase {
             console[method] = originalConsoleFuncs[method];
         });
     }
-    notify(error, beforeSendReportCallback?, blocking?, postSendCallback?, _handledState?) {
-        clog('notify', error instanceof Error, typeof error, error, error.message, error.stack);
+    notify(options: NotifyOptions | Error | string, _handledState?) {
+        const error = options instanceof Error ? options : options['error'] || options;
+        const realOptions: NotifyOptions = error !== options ? (options as NotifyOptions) : { error };
+        // clog('notify', error instanceof Error, typeof error, error, error.message, error.stack);
         if (!(error instanceof Error)) {
-            if (postSendCallback) {
-                postSendCallback(false);
+            if (realOptions.postSendCallback) {
+                realOptions.postSendCallback(false);
             }
             return Promise.reject('Bugsnag could not notify: error must be of type Error');
         }
         if (!this.config.shouldNotify()) {
-            if (postSendCallback) {
-                postSendCallback(false);
+            if (realOptions.postSendCallback) {
+                realOptions.postSendCallback(false);
             }
             return Promise.reject(undefined);
         }
 
-        const report = new Report(this.config.apiKey, error, _handledState);
+        const report = new Report(this.config.apiKey, realOptions.error, _handledState);
         if (this.config.codeBundleId) {
             report.addMetadata('app', 'codeBundleId', this.config.codeBundleId);
+        }
+        if (realOptions.metadata) {
+            report.addMetadatas(realOptions.metadata);
         }
 
         if (this.config.beforeSendCallbacks) {
             for (const callback of this.config.beforeSendCallbacks) {
-                if (callback(report, error) === false) {
-                    if (postSendCallback) {
-                        postSendCallback(false);
+                if (callback(report, realOptions.error) === false) {
+                    if (realOptions.postSendCallback) {
+                        realOptions.postSendCallback(false);
                     }
                     return Promise.reject('cancelled');
                 }
             }
         }
 
-        if (beforeSendReportCallback) {
-            beforeSendReportCallback(report);
+        if (realOptions.beforeSendReportCallback) {
+            realOptions.beforeSendReportCallback(report);
         }
 
         const payload: any = report.toJSON();
-        payload.blocking = !!blocking;
+        payload.blocking = !!realOptions.blocking;
 
         return this.handleNotify(payload)
             .then(() => {
-                if (postSendCallback) {
-                    postSendCallback();
+                if (realOptions.postSendCallback) {
+                    realOptions.postSendCallback();
                 }
             })
             .catch(err => {
-                if (postSendCallback) {
-                    postSendCallback(false);
+                if (realOptions.postSendCallback) {
+                    realOptions.postSendCallback(false);
                 }
                 return Promise.reject(err);
             });
@@ -281,6 +286,10 @@ export class Report {
             this.metadata[section] = {};
         }
         this.metadata[section][key] = value;
+    }
+
+    addMetadatas = object => {
+        Object.assign(this.metadata, object);
     }
 
     toJSON = () => {
