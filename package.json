@@ -5,6 +5,7 @@
         "tsc": "tsc -skipLibCheck && cp src/bugsnag.d.ts plugin",
         "build": "npm run tsc && \\cp README.md plugin/",
         "publish": "npm run build && lerna publish",
+        "commitmsg": "commitlint -e $GIT_PARAMS",
         "demo.ios": "npm i && npm run tsc && cd demo && tns run ios",
         "demo.android": "npm i && npm run tsc && cd demo && tns run android",
         "clean.demo": "rimraf demo/hooks demo/node_modules demo/platforms",
@@ -12,8 +13,7 @@
         "plugin.watch.tsc": "npm run tsc -- -w",
         "plugin.watch.android": "npm i && npm-watch build.android",
         "plugin.watch.ios": "npm i && npm-watch build.ios",
-        "plugin.watch": "npm run plugin.watch.tsc & npm run plugin.watch.android & npm run plugin.watch.ios",
-        "commitmsg": "commitlint -e $GIT_PARAMS"
+        "plugin.watch": "npm run plugin.watch.tsc & npm run plugin.watch.android & npm run plugin.watch.ios"
     },
     "devDependencies": {
         "@commitlint/cli": "^7.5.2",
