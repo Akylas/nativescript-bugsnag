@@ -68,7 +68,9 @@ function BSGParseJavaScriptStacktrace(stacktrace: string) {
     const bundleURL = NSBundle.mainBundle.bundleURL;
     while (match != null) {
         const frame = NSMutableDictionary.new();
-        frame.setObjectForKey(match[1], 'method');
+        if (!!match[1]) {
+            frame.setObjectForKey(match[1], 'method');
+        }
         if (!!match[2]) {
             frame.setObjectForKey(parseInt(match[4], 10), 'columnNumber');
             frame.setObjectForKey(parseInt(match[3], 10), 'lineNumber');
