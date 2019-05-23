@@ -50,8 +50,8 @@ new Promise(function(resolve, reject) {
 })
 .then(function () { /* if the promise is resolved */ })
 .catch(function (error) {
-  bugsnag.notify(error)
-}); // if the promise is rejected
+  bugsnag.notify(error) /* if the promise is rejected */
+});
 ```
 
 # Sending diagnostic data
