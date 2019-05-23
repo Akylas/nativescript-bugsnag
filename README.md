@@ -49,7 +49,9 @@ new Promise(function(resolve, reject) {
   /* potentially failing code */
 })
 .then(function () { /* if the promise is resolved */ })
-.catch(bugsnag.notify); // if the promise is rejected
+.catch(function (error) {
+  bugsnag.notify(error)
+}); // if the promise is rejected
 ```
 
 # Sending diagnostic data
