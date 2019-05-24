@@ -3,16 +3,13 @@
 [![GitHub forks](https://img.shields.io/github/forks/Akylas/nativescript-bugsnag.svg)](https://github.com/Akylas/nativescript-bugsnag/network)
 [![GitHub stars](https://img.shields.io/github/stars/Akylas/nativescript-bugsnag.svg)](https://github.com/Akylas/nativescript-bugsnag/stargazers)
 
-## Installation
+# Installation
 
 * `tns plugin add nativescript-bugsnag`
 
 Be sure to run a new build after adding plugins to avoid any issues.
 
----
-
-
-### Usage
+# Usage
 
 ```typescript
 import { Client } from 'nativescript-bugsnag';
@@ -29,12 +26,12 @@ bugsnag
     });
 ```
 
-# Reporting NativeScript errors
+## Reporting NativeScript errors
 
 The `handleUncaughtErrors` method ensures all unhandled NativeScript errors will be caught by Bugsnag in production, using a [custom error handler](https://docs.nativescript.org/core-concepts/error-handling).
 
 
-# Reporting handled errors
+## Reporting handled errors
 
 If you would like to send a handled error to Bugsnag, you can pass any Error object to Bugsnag’s notify method:
 ```typescript
@@ -45,7 +42,7 @@ try {
 }
 ```
 
-# Reporting promise rejections
+## Reporting promise rejections
 
 To report a promise rejection, use notify() as a part of the catch block:
 
@@ -55,13 +52,13 @@ new Promise(function(resolve, reject) {
 })
 .then(function () { /* if the promise is resolved */ })
 .catch(function (error) {
-  bugsnag.notify(error) /* if the promise is rejected */
+  bugsnag.notify(error); /* if the promise is rejected */
 });
 ```
 
-# Sending diagnostic data
+## Sending diagnostic data
 
-## Automatically captured diagnostics
+### Automatically captured diagnostics
 
 Bugsnag will automatically capture and attach the following diagnostic data:
 
@@ -73,7 +70,7 @@ Bugsnag will automatically capture and attach the following diagnostic data:
 * App running duration in the foreground and/or background
 * A device- and vendor-specific identifier
 
-## Attaching custom diagnostics
+### Attaching custom diagnostics
 
 It can often be helpful to attach application-specific diagnostic data to exception reports. This can be accomplished by adding a report callback to notify. The callback is invoked before the report is sent to Bugsnag:
 
@@ -87,7 +84,7 @@ bugsnag.notify(error, function(report) {
 });
 ```
 
-# Identifying users
+## Identifying users
 
 In order to correlate errors with customer reports, or to see a list of users who experienced each error, it is helpful to capture and display user information. Information set on the Bugsnag client is sent with each error report:
 
@@ -95,10 +92,11 @@ In order to correlate errors with customer reports, or to see a list of users wh
 bugsnag.setUser('1234', 'Jessica Jones', 'jess@example.com');
 ```
 
-# Logging breadcrumbs
+## Logging breadcrumbs
 
 In order to understand what happened in your application before each crash, it can be helpful to leave short log statements that we call breadcrumbs. The last several breadcrumbs are attached to a crash to help diagnose what events lead to the error.
-## Automatically captured breadcrumbs
+
+### Automatically captured breadcrumbs
 
 By default, Bugsnag captures common events including:
 
@@ -112,8 +110,7 @@ By default, Bugsnag captures common events including:
 * Non-fatal errors
 * Log messages (off by default, see configuration options)
 
-## Attaching custom breadcrumbs
-
+### Attaching custom breadcrumbs
 
 To attach additional breadcrumbs, use the leaveBreadcrumb function:
 
@@ -121,8 +118,7 @@ To attach additional breadcrumbs, use the leaveBreadcrumb function:
 bugsnag.leaveBreadcrumb('load main view', {type: 'navigation'});
 ```
 
-# Session tracking
-
+## Session tracking
 
 Bugsnag tracks the number of “sessions” that happen within your application. This allows you to compare stability scores between releases and helps you to understand the quality of your releases.
 
