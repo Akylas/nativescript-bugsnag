@@ -21,6 +21,7 @@ bugsnag
     .init('YOUR_API_KEY')
     .then(res => {
         bugsnag.enableConsoleBreadcrumbs();
+        bugsnag.handleUncaughtErrors();
         console.log('bugsnag did init', !!res);
     })
     .catch(err => {
@@ -28,9 +29,14 @@ bugsnag
     });
 ```
 
+# Reporting NativeScript errors
+
+The `handleUncaughtErrors` method ensures all unhandled NativeScript errors will be caught by Bugsnag in production, using a [custom error handler](https://docs.nativescript.org/core-concepts/error-handling).
+
+
 # Reporting handled errors
 
-If you would like to send handled errors to Bugsnag, you can pass any Error object to Bugsnag’s notify method:
+If you would like to send a handled error to Bugsnag, you can pass any Error object to Bugsnag’s notify method:
 ```typescript
 try {
   // potentially crashy code
@@ -41,8 +47,7 @@ try {
 
 # Reporting promise rejections
 
-
-By default, unhandled promise rejections are reported in production. To report an individual rejection, use notify() as a part of the catch block:
+To report a promise rejection, use notify() as a part of the catch block:
 
 ```typescript
 new Promise(function(resolve, reject) {
