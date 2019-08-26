@@ -83,7 +83,6 @@ export abstract class ClientBase {
 
     abstract getBreadcrumbType(str: string): any;
     enableConsoleBreadcrumbs() {
-        clog('enableConsoleBreadcrumbs');
         Object.keys(originalConsoleFuncs).forEach(method => {
             console[method] = (...args) => {
                 originalConsoleFuncs[method].apply(console, args);

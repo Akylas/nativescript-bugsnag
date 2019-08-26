@@ -2,7 +2,7 @@ import { BaseNative, BREADCRUMB_MAX_LENGTH, ClientBase, clog, createGetter, crea
 import { knownFolders } from 'tns-core-modules/file-system';
 import * as application from 'tns-core-modules/application';
 import { ConfigurationOptions, NativePropertyOptions } from './bugsnag';
-const appPath = knownFolders.currentApp().path + '/';
+// const appPath = knownFolders.currentApp().path + '/';
 
 export enum BreadcrumbType {
     ERROR = 'ERROR',
@@ -60,9 +60,9 @@ function getNativeHashMap(obj: { [k: string]: string }) {
 
 let JavaScriptException: JavaScriptException;
 
-interface JavaScriptException extends java.lang.Exception {
+interface JavaScriptException extends com.bugsnag.android.BugsnagException {
     // tslint:disable-next-line: no-misused-new
-    new (message): JavaScriptException;
+    new (name, message, rawStacktrace): JavaScriptException;
     name;
     rawStacktrace;
 }
@@ -72,18 +72,111 @@ function initJavaScriptException() {
     }
 
     const stackTraceRegex = /at\s*?([^\(]*)?\s*\(?(?:file:\/\/|\/webpack:)([^:\n]*)(?::([0-9]+))?(?::([0-9]+))?\)?/g;
+    const lineColRe = /:\d+:\d+$/;
+    const nsFilePathRe = /(file|webpack):\/\/\/.*?\/files\/app\//g;
+    const hermesStacktraceFormatRe = /[\s\t]*at .* \(.*\d+:\d+\)\s.*/gs;
+
+    function serialiseJsCoreFrame(writer: com.bugsnag.android.JsonStream, frame: string) {
+        // expected format is as follows:
+        //   release:
+        //     "$method@$filename:$lineNumber:$columnNumber"
+        //   dev:
+        //     "$method@?uri:$lineNumber:$columnNumber"
+
+        writer.beginObject();
+        const methodComponents = frame.split('@', 2);
+        let fragment = methodComponents[0];
+        if (methodComponents.length === 2) {
+            writer.name('method').value(methodComponents[0]);
+            fragment = methodComponents[1];
+        }
+
+        const columnIndex = fragment.lastIndexOf(':');
+        if (columnIndex !== -1) {
+            const columnString = fragment.substring(columnIndex + 1);
+            const columnNumber = parseInt(columnString, 10);
+
+            if (columnNumber != null) {
+                writer.name('columnNumber').value(columnNumber);
+            }
+            fragment = fragment.substring(0, columnIndex);
+        }
+
+        const lineNumberIndex = fragment.lastIndexOf(':');
+        if (lineNumberIndex !== -1) {
+            const lineNumberString = fragment.substring(lineNumberIndex + 1);
+            const lineNumber = parseInt(lineNumberString, 10);
+
+            if (lineNumber != null) {
+                writer.name('lineNumber').value(lineNumber);
+            }
+            fragment = fragment.substring(0, lineNumberIndex);
+        }
+
+        writer.name('file').value(fragment.replace(nsFilePathRe, ''));
+        writer.endObject();
+    }
+
+    function serialiseHermesFrame(writer: com.bugsnag.android.JsonStream, frame: string) {
+        // expected format is as follows:
+        //   release
+        //     "at $method (address at $filename:$lineNumber:$columnNumber)"
+        //   dev
+        //     "at $method ($filename:$lineNumber:$columnNumber)"
+
+        const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
+        const srcInfoEnd = frame.lastIndexOf(')');
+        const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
+
+        const methodStart = 'at '.length;
+        const methodEnd = frame.indexOf(' (');
+        const hasMethodInfo = methodStart < methodEnd;
+
+        // serialise srcInfo
+        if (hasSrcInfo || hasMethodInfo) {
+            writer.beginObject();
+            writer.name('method').value(frame.substring(methodStart, methodEnd));
+            if (hasSrcInfo) {
+                const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
+                // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
+                // so that we can extract just the filename portion "index.android.bundle"
+                const file = srcInfo.replace(lineColRe, '').replace(nsFilePathRe, '');
+
+                writer.name('file').value(file);
+
+                const chunks = srcInfo.split(':');
+                if (chunks.length >= 2) {
+                    const lineNumber = parseInt(chunks[chunks.length - 2], 10);
+                    const columnNumber = parseInt(chunks[chunks.length - 1], 10);
+
+                    if (lineNumber != null) {
+                        writer.name('lineNumber').value(lineNumber);
+                    }
+                    if (columnNumber != null) {
+                        writer.name('columnNumber').value(columnNumber);
+                    }
+                    // clog('frame test', frame.substring(methodStart, methodEnd), lineNumber, columnNumber, srcInfo, file);
+                }
+            }
+            writer.endObject();
+        }
+    }
 
     // @JavaProxy('com.nativescript.bugsnag.JavascriptException')
     @Interfaces([com.bugsnag.android.JsonStream.Streamable])
-    class JavaScriptExceptionImpl extends java.lang.Exception implements com.bugsnag.android.JsonStream.Streamable {
+    class JavaScriptExceptionImpl extends com.bugsnag.android.BugsnagException implements com.bugsnag.android.JsonStream.Streamable {
         private EXCEPTION_TYPE = 'JS';
         private serialVersionUID = 1175784680140218622;
         name: string;
         rawStacktrace: string;
+        // type:string;
 
-        constructor(message) {
-            super(message);
-            // this.rawStacktrace = rawStacktrace;
+        constructor(name, message, rawStacktrace) {
+            super(name, message, Array.create(java.lang.StackTraceElement, 0)); // stacktrace set later on
+            this.rawStacktrace = rawStacktrace;
+            // this.ty
+            // super.setType(this.EXCEPTION_TYPE);
+            clog('JavaScriptExceptionImpl', message, rawStacktrace);
         }
 
         toStream(writer: com.bugsnag.android.JsonStream) {
@@ -91,33 +184,42 @@ function initJavaScriptException() {
             writer.name('errorClass').value(this.name);
             writer.name('message').value(this.getLocalizedMessage());
             writer.name('type').value(this.EXCEPTION_TYPE);
-            // clog('toStream', appPath, this.rawStacktrace);
             if (this.rawStacktrace) {
                 writer.name('stacktrace');
                 writer.beginArray();
-                let match = stackTraceRegex.exec(this.rawStacktrace);
+                const isHermes = this.rawStacktrace.match(hermesStacktraceFormatRe);
+                clog('toStream', this.name, isHermes);
+                this.rawStacktrace.split('\n').forEach(frame => {
+                    if (isHermes) {
+                        serialiseHermesFrame(writer, frame.trim());
+                    } else {
+                        serialiseJsCoreFrame(writer, frame.trim());
+                    }
+                });
+
+                // let match = stackTraceRegex.exec(this.rawStacktrace);
                 // clog('toStream', 'rawStacktrace', this.rawStacktrace, match);
-                while (match != null) {
-                    writer.beginObject();
-                    if (match[1]) {
-                        writer.name('method').value(match[1]);
-                    }
-                    writer.name('columnNumber').value(parseInt(match[4], 10));
-                    writer.name('lineNumber').value(parseInt(match[3], 10));
-                    if (match[2]) {
-                        writer.name('file').value(match[2].replace(appPath, ''));
-                    }
-                    writer.endObject();
-                    // matched text: match[0]
-                    // match start: match.index
-                    // capturing group n: match[n]
-                    // clog('adding stacktrace:');
-                    // clog('   method:', match[1]);
-                    // clog('   columnNumber:', match[4], parseInt(match[4], 10));
-                    // clog('   lineNumber:', match[3], parseInt(match[3], 10));
-                    // clog('   file:', match[2], match[2].replace(appPath, ''));
-                    match = stackTraceRegex.exec(this.rawStacktrace);
-                }
+                // while (match != null) {
+                //     writer.beginObject();
+                //     if (match[1]) {
+                //         writer.name('method').value(match[1]);
+                //     }
+                //     writer.name('columnNumber').value(parseInt(match[4], 10));
+                //     writer.name('lineNumber').value(parseInt(match[3], 10));
+                //     if (match[2]) {
+                //         writer.name('file').value(match[2].replace(appPath, ''));
+                //     }
+                //     writer.endObject();
+                //     // matched text: match[0]
+                //     // match start: match.index
+                //     // capturing group n: match[n]
+                //     // clog('adding stacktrace:');
+                //     // clog('   method:', match[1]);
+                //     // clog('   columnNumber:', match[4], parseInt(match[4], 10));
+                //     // clog('   lineNumber:', match[3], parseInt(match[3], 10));
+                //     // clog('   file:', match[2], match[2].replace(appPath, ''));
+                //     match = stackTraceRegex.exec(this.rawStacktrace);
+                // }
                 writer.endArray();
             }
             writer.endObject();
@@ -320,10 +422,10 @@ export class Client extends ClientBase {
             const errorMessage = options.errorMessage;
             const rawStacktrace = options.stacktrace;
             initJavaScriptException();
-            const exc = new JavaScriptException(errorMessage);
-            exc.name = errorClass;
-            exc.rawStacktrace = rawStacktrace;
-            // clog('handleNotify', exc, exc.rawStacktrace);
+            const exc = new JavaScriptException(errorClass, errorMessage, rawStacktrace);
+            // exc.name = errorClass;
+            // exc.rawStacktrace = rawStacktrace;
+            clog('handleNotify', exc);
 
             initDiagnosticsCallback();
             const handler = new DiagnosticsCallback(this.libraryVersion, this.bugsnagAndroidVersion, options);
@@ -341,11 +443,10 @@ export class Client extends ClientBase {
 }
 
 function onBeforeNotifyError(error: com.bugsnag.android.Error) {
-
-    if (error.getExceptionName() === 'com.tns.NativeScriptException') {
-        return false;
-    }
-    clog('onBeforeNotifyError', error.getExceptionName(), error.getExceptionMessage(), error.getGroupingHash(), error.getDeviceData(), error.getSeverity().getName(), error.getContext());
+    // if (error.getExceptionName() === 'com.tns.NativeScriptException') {
+    //     return false;
+    // }
+    // clog('onBeforeNotifyError', error.getExceptionName(), error.getExceptionMessage(), error.getGroupingHash(), error.getDeviceData(), error.getSeverity().getName(), error.getContext());
     return true;
 }
 

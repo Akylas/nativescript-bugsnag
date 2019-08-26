@@ -57,114 +57,201 @@ function getNativeStackTrace(error: Error) {
     return array;
 }
 
-const stackTraceRegex = /(?:(.*)@)?(?:(.*):([0-9]+):([0-9]+)|(\[.*\]))/g;
+const lineColRe = /:\d+:\d+$/;
+const nsFilePathRe = /(file|webpack):\/\/\/.*?app\//g;
+const hermesStacktraceFormatRe = /[\s\t]*at\s+.*?\s*?\(.*?(\d+:\d+)?\)/gs;
 
-function BSGParseJavaScriptStacktrace(stacktrace: string) {
-    if (!stacktrace) {
-        return null;
-    }
-    const frames = NSMutableArray.new();
-    let match = stackTraceRegex.exec(stacktrace);
-    const bundleURL = NSBundle.mainBundle.bundleURL;
-    while (match != null) {
-        const frame = NSMutableDictionary.new();
-        if (!!match[1]) {
-            frame.setObjectForKey(match[1], 'method');
-        }
-        if (!!match[2]) {
-            frame.setObjectForKey(parseInt(match[4], 10), 'columnNumber');
-            frame.setObjectForKey(parseInt(match[3], 10), 'lineNumber');
-            frame.setObjectForKey(
-                match[2]
-                    .replace('file:///', '')
-                    .replace(bundleURL.absoluteString, '')
-                    .replace(bundleURL.path, ''),
-                'file'
-            );
-        } else {
-            // native code ignore line/column
-            frame.setObjectForKey(0, 'columnNumber');
-            frame.setObjectForKey(0, 'lineNumber');
-            frame.setObjectForKey(match[5], 'file');
-        }
+function serialiseJsCoreFrame(frame: string) {
+    const writer = NSMutableDictionary.new();
+    // expected format is as follows:
+    //   release:
+    //     "$method@$filename:$lineNumber:$columnNumber"
+    //   dev:
+    //     "$method@?uri:$lineNumber:$columnNumber"
 
-        frames.addObject(frame);
-        match = stackTraceRegex.exec(stacktrace);
+    const methodComponents = frame.split('@', 2);
+    let fragment = methodComponents[0];
+    if (methodComponents.length === 2) {
+        writer.setObjectForKey(methodComponents[0], 'method');
+        fragment = methodComponents[1];
     }
-    // const methodSeparator = '@';
-    // const locationSeparator = ':';
-    // const lines = stacktrace.split('\n');
-    // const frames = NSMutableArray.alloc().initWithCapacity(lines.length);
-    // lines.forEach(line => {
-    //     const frame = NSMutableDictionary.new();
-    //     let location = line;
-    //     let index = location.indexOf(methodSeparator);
-    //     if (index !== -1) {
-    //         frame.setObjectForKey(location.substring(index), 'method');
-    //     }
-    //     index = location.lastIndexOf(locationSeparator);
-    //     if (index !== -1) {
-    //         frame.setObjectForKey(location.substring(index), 'columnNumber');
-    //         location = location.substring(0, index);
-    //     }
-    //     index = location.lastIndexOf(locationSeparator);
-    //     if (index !== -1) {
-    //         frame.setObjectForKey(location.substring(index), 'lineNumber');
-    //         location = location.substring(0, index);
-    //     }
-    //     const bundleURL = NSBundle.mainBundle.bundleURL;
-    //     index = location.indexOf(bundleURL.absoluteString);
-    //     if (index !== -1) {
-    //         location = bundleURL.absoluteString;
-    //     } else {
-    //         index = location.indexOf(bundleURL.path);
-    //         if (index !== -1) {
-    //             location = bundleURL.path;
-    //         }
-    //     }
-    //     frame.setObjectForKey(location, 'file');
-    //     frames.addObject(frame);
-    // });
-    // for (NSString *line in lines) {
-    //     NSMutableDictionary *frame = [NSMutableDictionary new];
-    //     NSString *location = line;
-    //     NSRange methodRange = [line rangeOfCharacterFromSet:methodSeparator];
-    //     if (methodRange.location != NSNotFound) {
-    //         frame[@"method"] = [line substringToIndex:methodRange.location];
-    //         location = [line substringFromIndex:methodRange.location + 1];
-    //     }
-    //     NSRange search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
-    //     if (search.location != NSNotFound) {
-    //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
-    //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
-    //         if (value) {
-    //             frame[@"columnNumber"] = value;
-    //             location = [location substringToIndex:search.location];
-    //         }
-    //     }
-    //     search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
-    //     if (search.location != NSNotFound) {
-    //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
-    //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
-    //         if (value) {
-    //             frame[@"lineNumber"] = value;
-    //             location = [location substringToIndex:search.location];
-    //         }
-    //     }
-    //     NSURL *bundleURL = [[NSBundle mainBundle] bundleURL];
-    //     search = [location rangeOfString:[bundleURL absoluteString]];
-    //     if (search.location != NSNotFound) {
-    //         location = [location substringFromIndex:search.location + search.length];
-    //     } else {
-    //         search = [location rangeOfString:[bundleURL path]];
-    //         if (search.location != NSNotFound)
-    //             location = [location substringFromIndex:search.location + search.length + 1];
-    //     }
-    //     frame[@"file"] = location;
-    //     [frames addObject:frame];
-    // }
-    return frames;
+
+    const columnIndex = fragment.lastIndexOf(':');
+    if (columnIndex !== -1) {
+        const columnString = fragment.substring(columnIndex + 1);
+        const columnNumber = parseInt(columnString, 10);
+
+        if (columnNumber != null) {
+            writer.setObjectForKey(columnNumber, 'columnNumber');
+        }
+        fragment = fragment.substring(0, columnIndex);
+    }
+
+    const lineNumberIndex = fragment.lastIndexOf(':');
+    if (lineNumberIndex !== -1) {
+        const lineNumberString = fragment.substring(lineNumberIndex + 1);
+        const lineNumber = parseInt(lineNumberString, 10);
+
+        if (lineNumber != null) {
+            writer.setObjectForKey(lineNumber, 'lineNumber');
+        }
+        fragment = fragment.substring(0, lineNumberIndex);
+    }
+
+    writer.setObjectForKey('file', fragment.replace(nsFilePathRe, ''));
+
+    return writer;
 }
+
+function serialiseHermesFrame(frame: string) {
+    // expected format is as follows:
+    //   release
+    //     "at $method (address at $filename:$lineNumber:$columnNumber)"
+    //   dev
+    //     "at $method ($filename:$lineNumber:$columnNumber)"
+    const writer = NSMutableDictionary.new();
+
+    const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
+    const srcInfoEnd = frame.lastIndexOf(')');
+    const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
+
+    const methodStart = frame.indexOf('at ') !== -1 ? 'at '.length : 0;
+    const methodEnd = frame.indexOf('(');
+    const hasMethodInfo = methodStart < methodEnd;
+
+    // serialise srcInfo
+    if (hasSrcInfo || hasMethodInfo) {
+        writer.setObjectForKey(frame.substring(methodStart, methodEnd), 'method');
+        if (hasSrcInfo) {
+            const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
+            // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
+            // so that we can extract just the filename portion "index.android.bundle"
+            const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, '');
+
+            writer.setObjectForKey(file, 'file');
+
+            const chunks = srcInfo.split(':');
+            if (chunks.length >= 2) {
+                const lineNumber = parseInt(chunks[chunks.length - 2], 10);
+                const columnNumber = parseInt(chunks[chunks.length - 1], 10);
+
+                if (lineNumber != null) {
+                    writer.setObjectForKey(lineNumber, 'lineNumber');
+                }
+                if (columnNumber != null) {
+                    writer.setObjectForKey(columnNumber, 'columnNumber');
+                }
+                // clog('frame test', frame, frame.substring(methodStart, methodEnd), lineNumber, columnNumber, srcInfo, file);
+
+            } else {
+                // clog('frame test2', frame, frame.substring(methodStart, methodEnd), srcInfo, file);
+
+            }
+        }
+    }
+    return writer;
+}
+// function BSGParseJavaScriptStacktrace(stacktrace: string) {
+//     if (!stacktrace) {
+//         return null;
+//     }
+//     const frames = NSMutableArray.new();
+//     let match = stackTraceRegex.exec(stacktrace);
+//     // const bundleURL = NSBundle.mainBundle.bundleURL;
+//     while (match != null) {
+//         const frame = NSMutableDictionary.new();
+//         if (!!match[1]) {
+//             frame.setObjectForKey(match[1], 'method');
+//         }
+//         if (!!match[2]) {
+//             frame.setObjectForKey(parseInt(match[4], 10), 'columnNumber');
+//             frame.setObjectForKey(parseInt(match[3], 10), 'lineNumber');
+//             frame.setObjectForKey(match[2].replace(nsFilePathRe, ''), 'file');
+//             console.log('stack frame', stacktrace, parseInt(match[4], 10), parseInt(match[3], 10), match[2].replace(nsFilePathRe, ''));
+//         } else {
+//             // native code ignore line/column
+//             frame.setObjectForKey(0, 'columnNumber');
+//             frame.setObjectForKey(0, 'lineNumber');
+//             frame.setObjectForKey(match[5].replace(nsFilePathRe, ''), 'file');
+//         }
+
+//         frames.addObject(frame);
+//         match = stackTraceRegex.exec(stacktrace);
+//     }
+//     // const methodSeparator = '@';
+//     // const locationSeparator = ':';
+//     // const lines = stacktrace.split('\n');
+//     // const frames = NSMutableArray.alloc().initWithCapacity(lines.length);
+//     // lines.forEach(line => {
+//     //     const frame = NSMutableDictionary.new();
+//     //     let location = line;
+//     //     let index = location.indexOf(methodSeparator);
+//     //     if (index !== -1) {
+//     //         frame.setObjectForKey(location.substring(index), 'method');
+//     //     }
+//     //     index = location.lastIndexOf(locationSeparator);
+//     //     if (index !== -1) {
+//     //         frame.setObjectForKey(location.substring(index), 'columnNumber');
+//     //         location = location.substring(0, index);
+//     //     }
+//     //     index = location.lastIndexOf(locationSeparator);
+//     //     if (index !== -1) {
+//     //         frame.setObjectForKey(location.substring(index), 'lineNumber');
+//     //         location = location.substring(0, index);
+//     //     }
+//     //     const bundleURL = NSBundle.mainBundle.bundleURL;
+//     //     index = location.indexOf(bundleURL.absoluteString);
+//     //     if (index !== -1) {
+//     //         location = bundleURL.absoluteString;
+//     //     } else {
+//     //         index = location.indexOf(bundleURL.path);
+//     //         if (index !== -1) {
+//     //             location = bundleURL.path;
+//     //         }
+//     //     }
+//     //     frame.setObjectForKey(location, 'file');
+//     //     frames.addObject(frame);
+//     // });
+//     // for (NSString *line in lines) {
+//     //     NSMutableDictionary *frame = [NSMutableDictionary new];
+//     //     NSString *location = line;
+//     //     NSRange methodRange = [line rangeOfCharacterFromSet:methodSeparator];
+//     //     if (methodRange.location != NSNotFound) {
+//     //         frame[@"method"] = [line substringToIndex:methodRange.location];
+//     //         location = [line substringFromIndex:methodRange.location + 1];
+//     //     }
+//     //     NSRange search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
+//     //     if (search.location != NSNotFound) {
+//     //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
+//     //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
+//     //         if (value) {
+//     //             frame[@"columnNumber"] = value;
+//     //             location = [location substringToIndex:search.location];
+//     //         }
+//     //     }
+//     //     search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
+//     //     if (search.location != NSNotFound) {
+//     //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
+//     //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
+//     //         if (value) {
+//     //             frame[@"lineNumber"] = value;
+//     //             location = [location substringToIndex:search.location];
+//     //         }
+//     //     }
+//     //     NSURL *bundleURL = [[NSBundle mainBundle] bundleURL];
+//     //     search = [location rangeOfString:[bundleURL absoluteString]];
+//     //     if (search.location != NSNotFound) {
+//     //         location = [location substringFromIndex:search.location + search.length];
+//     //     } else {
+//     //         search = [location rangeOfString:[bundleURL path]];
+//     //         if (search.location != NSNotFound)
+//     //             location = [location substringFromIndex:search.location + search.length + 1];
+//     //     }
+//     //     frame[@"file"] = location;
+//     //     [frames addObject:frame];
+//     // }
+//     return frames;
+// }
 
 export enum BreadcrumbType {
     ERROR = BSGBreadcrumbType.Error,
@@ -261,13 +348,23 @@ export class Client extends ClientBase {
     }
 
     handleNotify(options) {
-        clog('handleNotify', options, this._initialized);
+        // clog('handleNotify', options, this._initialized);
         if (this._initialized) {
             return new Promise(resolve => {
                 const exception = NSException.exceptionWithNameReasonUserInfo(options.errorClass || 'JavascriptError', options.errorMessage, null);
                 Bugsnag.internalClientNotifyWithDataBlock(exception, getNativeMap(options), (report: BugsnagCrashReport) => {
                     if (options.stacktrace) {
-                        report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'JS');
+                        const isHermes = options.stacktrace.match(hermesStacktraceFormatRe);
+                        const frames = NSMutableArray.new();
+                        options.stacktrace.split('\n').forEach(frame => {
+                            if (isHermes) {
+                                frames.addObject(serialiseHermesFrame(frame.trim()));
+                            } else {
+                                frames.addObject(serialiseJsCoreFrame(frame.trim()));
+                            }
+                        });
+                        report.attachCustomStacktraceWithType(frames, 'JS');
+                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'JS');
                     }
                     if (options.context) {
                         report.context = options.context;
@@ -286,7 +383,7 @@ export class Client extends ClientBase {
     }
 }
 function onBeforeSendReport(rawData, report: BugsnagCrashReport) {
-    clog('onBeforeSendReport', report, report.errorMessage, report.errorClass, report.error);
+    // clog('onBeforeSendReport', report, report.errorMessage, report.errorClass, report.error);
     return true;
 }
 export class Configuration extends BaseNative<BugsnagConfiguration, ConfigurationOptions> {
