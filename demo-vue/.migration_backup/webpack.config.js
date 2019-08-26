@@ -1,8 +1,7 @@
 const { relative, resolve, sep } = require('path');
-const { readFileSync } = require('fs');
 
 const webpack = require('webpack');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -13,9 +12,6 @@ const nsWebpack = require('nativescript-dev-webpack');
 const nativescriptTarget = require('nativescript-dev-webpack/nativescript-target');
 const { NativeScriptWorkerPlugin } = require('nativescript-worker-loader/NativeScriptWorkerPlugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-
-const { BugsnagBuildReporterPlugin, BugsnagSourceMapUploaderPlugin } = require('webpack-bugsnag-plugins');
-
 module.exports = env => {
     // Add your custom Activities, Services and other android app components here.
     const appComponents = ['tns-core-modules/ui/frame', 'tns-core-modules/ui/frame/activity'];
@@ -118,13 +114,7 @@ module.exports = env => {
             path: dist,
             libraryTarget: 'commonjs2',
             filename: '[name].js',
-            globalObject: 'global',
-            devtoolModuleFilenameTemplate: info => {
-                return info.absoluteResourcePath.split('?')[0];
-            },
-            devtoolFallbackModuleFilenameTemplate: info => {
-                return info.absoluteResourcePath.split('?')[0];
-            }
+            globalObject: 'global'
         },
         resolve: {
             extensions: ['.vue', '.js', '.ts', '.tsx', '.scss', '.css'],
@@ -147,7 +137,7 @@ module.exports = env => {
             fs: 'empty',
             __dirname: false
         },
-        devtool: shouldProduceSourceMap ? 'source-map' : 'none',
+        devtool: shouldProduceSourceMap ? 'inline-source-map' : 'none',
         optimization: {
             runtimeChunk: 'single',
             splitChunks: {
@@ -407,31 +397,5 @@ module.exports = env => {
         config.plugins.push(new webpack.HotModuleReplacementPlugin());
     }
 
-    const BUGSNAG_KEY = 'c2bac2381b9fed37bfa37453e71a0ea9';
-    let appVersion;
-    let buildNumber;
-    if (platform === 'android') {
-        appVersion = readFileSync('app/App_Resources/Android/src/main/AndroidManifest.xml', 'utf8').match(/android:versionName="(.*?)"/)[1];
-        buildNumber = readFileSync('app/App_Resources/Android/src/main/AndroidManifest.xml', 'utf8').match(/android:versionCode="([0-9]*)"/)[1];
-    } else if (platform === 'ios') {
-        appVersion = readFileSync('app/App_Resources/iOS/Info.plist', 'utf8').match(/<key>CFBundleShortVersionString<\/key>[\s\n]*<string>(.*?)<\/string>/)[1];
-        buildNumber = readFileSync('app/App_Resources/iOS/Info.plist', 'utf8').match(/<key>CFBundleVersion<\/key>[\s\n]*<string>([0-9]*)<\/string>/)[1];
-    }
-    config.plugins.push(
-        new BugsnagSourceMapUploaderPlugin({
-            apiKey: BUGSNAG_KEY,
-            appVersion,
-            // codeBundleId: buildNumber,
-            overwrite: true,
-            publicPath: '.',
-            ignoredBundleExtensions:['hot-update.js']
-        })
-    );
-    // config.plugins.push(
-    //     new BugsnagBuildReporterPlugin({
-    //         apiKey: BUGSNAG_KEY,
-    //         appVersion
-    //     })
-    // );
     return config;
 };
