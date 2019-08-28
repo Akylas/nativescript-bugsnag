@@ -109,6 +109,10 @@ function serialiseHermesFrame(frame: string) {
     //     "at $method (address at $filename:$lineNumber:$columnNumber)"
     //   dev
     //     "at $method ($filename:$lineNumber:$columnNumber)"
+    const isFrame = frame.indexOf('at ') >= 0;
+    if (!isFrame) {
+        return null;
+    }
     const writer = NSMutableDictionary.new();
 
     const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
@@ -126,7 +130,7 @@ function serialiseHermesFrame(frame: string) {
             const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
             // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
             // so that we can extract just the filename portion "index.android.bundle"
-            const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, '');
+            const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, './');
 
             writer.setObjectForKey(file, 'file');
 
@@ -353,14 +357,18 @@ export class Client extends ClientBase {
                         const isHermes = options.stacktrace.match(hermesStacktraceFormatRe);
                         const frames = NSMutableArray.new();
                         options.stacktrace.split('\n').forEach(frame => {
-                            if (isHermes) {
-                                frames.addObject(serialiseHermesFrame(frame.trim()));
-                            } else {
-                                frames.addObject(serialiseJsCoreFrame(frame.trim()));
+                            // if (isHermes) {
+                            const result = serialiseHermesFrame(frame.trim());
+                            if (result) {
+                                frames.addObject(result);
                             }
+
+                            // } else {
+                            // frames.addObject(serialiseJsCoreFrame(frame.trim()));
+                            // }
                         });
-                        report.attachCustomStacktraceWithType(frames, 'browserJs');
-                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'browserJs');
+                        report.attachCustomStacktraceWithType(frames, 'browserjs');
+                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'browserjs');
                     }
                     if (options.context) {
                         report.context = options.context;

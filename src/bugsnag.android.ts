@@ -83,6 +83,7 @@ function initJavaScriptException() {
         //   dev:
         //     "$method@?uri:$lineNumber:$columnNumber"
 
+        console.log('serialiseJsCoreFrame', frame       );
         writer.beginObject();
         const methodComponents = frame.split('@', 2);
         let fragment = methodComponents[0];
@@ -125,22 +126,29 @@ function initJavaScriptException() {
         //     "at $method ($filename:$lineNumber:$columnNumber)"
 
         const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
-        const srcInfoEnd = frame.lastIndexOf(')');
+        const srcInfoEnd = frame.lastIndexOf(')') >= 0 ? frame.lastIndexOf(')') : (frame.length);
         const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
 
-        const methodStart = 'at '.length;
+        const isFrame = frame.indexOf('at ') >= 0;
+        if (!isFrame) {
+            return;
+        }
+        const methodStart = frame.indexOf('at ') !== -1 ? 'at '.length : 0;
         const methodEnd = frame.indexOf(' (');
         const hasMethodInfo = methodStart < methodEnd;
+
 
         // serialise srcInfo
         if (hasSrcInfo || hasMethodInfo) {
             writer.beginObject();
-            writer.name('method').value(frame.substring(methodStart, methodEnd));
+            if (hasMethodInfo) {
+                writer.name('method').value(frame.substring(methodStart, methodEnd));
+            }
             if (hasSrcInfo) {
                 const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
                 // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
                 // so that we can extract just the filename portion "index.android.bundle"
-                const file = srcInfo.replace(lineColRe, '').replace(nsFilePathRe, '');
+                const file = srcInfo.replace(lineColRe, '').replace(nsFilePathRe, './');
 
                 writer.name('file').value(file);
 
@@ -165,36 +173,37 @@ function initJavaScriptException() {
     // @JavaProxy('com.nativescript.bugsnag.JavascriptException')
     @Interfaces([com.bugsnag.android.JsonStream.Streamable])
     class JavaScriptExceptionImpl extends com.bugsnag.android.BugsnagException implements com.bugsnag.android.JsonStream.Streamable {
-        private EXCEPTION_TYPE = 'browserJs';
+        private EXCEPTION_TYPE = 'browserjs';
         private serialVersionUID = 1175784680140218622;
-        name: string;
+        // name: string;
         rawStacktrace: string;
         // type:string;
 
         constructor(name, message, rawStacktrace) {
             super(name, message, Array.create(java.lang.StackTraceElement, 0)); // stacktrace set later on
+            // this.name = name;
             this.rawStacktrace = rawStacktrace;
             // this.ty
             // super.setType(this.EXCEPTION_TYPE);
-            clog('JavaScriptExceptionImpl', message, rawStacktrace);
+            // clog('JavaScriptExceptionImpl', name, message, rawStacktrace);
         }
 
         toStream(writer: com.bugsnag.android.JsonStream) {
             writer.beginObject();
-            writer.name('errorClass').value(this.name);
+            // console.log('toStream', this.getName(), this.getLocalizedMessage(), this.EXCEPTION_TYPE);
+            writer.name('errorClass').value(this.getName());
             writer.name('message').value(this.getLocalizedMessage());
             writer.name('type').value(this.EXCEPTION_TYPE);
             if (this.rawStacktrace) {
                 writer.name('stacktrace');
                 writer.beginArray();
                 const isHermes = this.rawStacktrace.match(hermesStacktraceFormatRe);
-                clog('toStream', this.name, isHermes);
                 this.rawStacktrace.split('\n').forEach(frame => {
-                    if (isHermes) {
+                    // if (isHermes) {
                         serialiseHermesFrame(writer, frame.trim());
-                    } else {
-                        serialiseJsCoreFrame(writer, frame.trim());
-                    }
+                    // } else {
+                        // serialiseJsCoreFrame(writer, frame.trim());
+                    // }
                 });
 
                 // let match = stackTraceRegex.exec(this.rawStacktrace);
@@ -425,7 +434,7 @@ export class Client extends ClientBase {
             const exc = new JavaScriptException(errorClass, errorMessage, rawStacktrace);
             // exc.name = errorClass;
             // exc.rawStacktrace = rawStacktrace;
-            clog('handleNotify', exc);
+            // clog('handleNotify', exc);
 
             initDiagnosticsCallback();
             const handler = new DiagnosticsCallback(this.libraryVersion, this.bugsnagAndroidVersion, options);
