@@ -165,7 +165,7 @@ function initJavaScriptException() {
     // @JavaProxy('com.nativescript.bugsnag.JavascriptException')
     @Interfaces([com.bugsnag.android.JsonStream.Streamable])
     class JavaScriptExceptionImpl extends com.bugsnag.android.BugsnagException implements com.bugsnag.android.JsonStream.Streamable {
-        private EXCEPTION_TYPE = 'JS';
+        private EXCEPTION_TYPE = 'browserJs';
         private serialVersionUID = 1175784680140218622;
         name: string;
         rawStacktrace: string;

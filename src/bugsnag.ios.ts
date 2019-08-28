@@ -142,10 +142,6 @@ function serialiseHermesFrame(frame: string) {
                     writer.setObjectForKey(columnNumber, 'columnNumber');
                 }
                 // clog('frame test', frame, frame.substring(methodStart, methodEnd), lineNumber, columnNumber, srcInfo, file);
-
-            } else {
-                // clog('frame test2', frame, frame.substring(methodStart, methodEnd), srcInfo, file);
-
             }
         }
     }
@@ -363,8 +359,8 @@ export class Client extends ClientBase {
                                 frames.addObject(serialiseJsCoreFrame(frame.trim()));
                             }
                         });
-                        report.attachCustomStacktraceWithType(frames, 'JS');
-                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'JS');
+                        report.attachCustomStacktraceWithType(frames, 'browserJs');
+                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'browserJs');
                     }
                     if (options.context) {
                         report.context = options.context;
