@@ -1,3 +1,20 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.bugsnag.android.gradle'
+
 dependencies {
     implementation 'com.bugsnag:bugsnag-android-ndk:4.+'
+}
+bugsnag {
+    overwrite true
+    ndk true
+    sharedObjectPath "build/intermediates/merged_jni_libs/release/out"
+}
+
+android.applicationVariants.all { variant ->
+  if (variant.buildType.name == 'release') {
+      variant.mergeAssets.doLast {
+          println("deleting source map files from variant")
+          delete(fileTree(dir: variant.mergeAssets.outputDir, includes: ['**/*.map']))
+      }
+  }
 }
