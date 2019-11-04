@@ -5,24 +5,21 @@
     "repository": "http://www.github.com/Akylas/nativescript-bugsnag.git",
     "nativescript": {
         "id": "org.nativescript.demovuebugsnag",
-        "tns-android": {
-            "version": "6.1.0-2019-08-26-112736-02"
-        },
         "tns-ios": {
-            "version": "6.1.0-2019-08-25-235541-03"
+            "version": "6.2.0"
         }
     },
     "dependencies": {
         "nativescript-bugsnag": "file:../plugin",
         "nativescript-vue": "2.4.0",
-        "tns-core-modules": "6.0.7",
+        "tns-core-modules": "6.1.2",
         "tslib": "^1.10.0",
         "vue-class-component": "^7.1.0"
     },
     "devDependencies": {
-        "@babel/core": "^7.5.5",
+        "@babel/core": "^7.6.4",
         "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-        "@babel/preset-env": "^7.5.5",
+        "@babel/preset-env": "^7.6.3",
         "nativescript-vue-template-compiler": "^2.4.0",
         "babel-loader": "^8.0.6",
         "babel-traverse": "6.26.0",
@@ -32,26 +29,24 @@
         "copy-webpack-plugin": "^5.0.4",
         "css-hot-loader": "^1.4.4",
         "css-loader": "^3.2.0",
-        "fork-ts-checker-webpack-plugin": "^1.5.0",
-        "nativescript-dev-webpack": "1.1.1",
+        "fork-ts-checker-webpack-plugin": "^3.0.1",
+        "nativescript-dev-webpack": "1.2.1",
         "nativescript-worker-loader": "~0.9.5",
-        "node-sass": "^4.12.0",
-        "sass-loader": "^7.3.1",
-        "string-replace-loader": "^2.1.1",
-        "terser-webpack-plugin": "^1.4.1",
-        "tns-platform-declarations": "6.0.7",
-        "ts-loader": "^6.0.4",
-        "typescript": "^3.5.3",
+        "node-sass": "^4.13.0",
+        "sass-loader": "^8.0.0",
+        "string-replace-loader": "^2.2.0",
+        "terser-webpack-plugin": "^2.2.1",
+        "tns-platform-declarations": "6.1.2",
+        "ts-loader": "^6.2.1",
+        "typescript": "^3.6.4",
         "vue": "^2.6.10",
-        "vue-loader": "^15.7.1",
-        "vue-property-decorator": "^8.2.1",
-        "webpack": "^4.39.2",
-        "webpack-bundle-analyzer": "~3.4.1",
-        "webpack-bugsnag-plugins": "^1.4.1",
-        "webpack-cli": "^3.3.7",
+        "vue-loader": "^15.7.2",
+        "vue-property-decorator": "^8.3.0",
+        "webpack": "^4.41.2",
+        "webpack-bundle-analyzer": "~3.6.0",
+        "webpack-bugsnag-plugins": "^1.4.2",
+        "webpack-cli": "^3.3.10",
         "webpack-strip-block": "^0.2.0"
     },
-    "scripts": {
-        "tslint": "npm i && tslint --config '../tslint.json' 'app/**/*.ts' --exclude '**/node_modules/**'"
-    }
+    "scripts": {}
 }

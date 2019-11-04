@@ -4,7 +4,7 @@ import { Client } from 'nativescript-bugsnag';
 
 const bugsnag = (Vue.prototype.$bugsnag = new Client());
 bugsnag
-    .init('c2bac2381b9fed37bfa37453e71a0ea9')
+    .init({ apiKey: 'c2bac2381b9fed37bfa37453e71a0ea9', releaseStage: TNS_ENV })
     .then(res => {
         bugsnag.enableConsoleBreadcrumbs();
         bugsnag.handleUncaughtErrors();
@@ -15,7 +15,5 @@ bugsnag
     });
 import Home from './views/Home';
 new Vue({
-    render: h => {
-        return h('frame', [h(Home)]);
-    }
+    render: h => h('frame', [h(Home)])
 }).$start();

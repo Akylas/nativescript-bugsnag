@@ -1,5 +1,9 @@
 import { BreadcrumbType } from 'nativescript-bugsnag';
 
+declare class TestClass {
+    static someMethod();
+}
+
 export default {
     name: 'Home',
     template: `
@@ -12,6 +16,7 @@ export default {
         <Button text="notify" @tap="notify"/>
         <Button text="throwError" @tap="throwError"/>
         <Button text="crashTest" @tap="crashTest"/>
+        <Button text="nativeCrashTest" @tap="nativeCrashTest"/>
       </StackLayout>
     </Page>
     `,
@@ -36,6 +41,9 @@ export default {
         },
         crashTest() {
             this.thisShouldCrash();
+        },
+        nativeCrashTest() {
+            TestClass.someMethod();
         }
     }
 };
