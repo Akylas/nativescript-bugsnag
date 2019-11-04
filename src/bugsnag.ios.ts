@@ -1,4 +1,4 @@
-import { BaseNative, BREADCRUMB_MAX_LENGTH, cerror, ClientBase, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
+import { BREADCRUMB_MAX_LENGTH, BaseNative, ClientBase, cerror, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
 import { ConfigurationOptions, NativePropertyOptions } from './bugsnag';
 
 function nativePropertyGenerator(target: Object, key: string, options?: NativePropertyOptions) {
@@ -11,12 +11,20 @@ function nativePropertyGenerator(target: Object, key: string, options?: NativePr
     });
 }
 
+function NSDicttoJSON(obj: NSDictionary<any, any> | NSMutableDictionary<any, any>) {
+    const result = {};
+    obj.enumerateKeysAndObjectsUsingBlock((key, value) => {
+        result[key] = value;
+    });
+    return result;
+}
+
 export function nativeProperty(target: any, k?, desc?: PropertyDescriptor): any;
 export function nativeProperty(options: NativePropertyOptions): (target: any, k?, desc?: PropertyDescriptor) => any;
 export function nativeProperty(...args) {
     // clog('test deco', typeof args[0], Object.keys(args[0]), args[1], typeof args[1]);
     if (args.length === 1) {
-        /// this must be a factory
+        // this must be a factory
         return function(target: any, key?: string, descriptor?: PropertyDescriptor) {
             return nativePropertyGenerator(target, key, args[0] || {});
         };
@@ -59,6 +67,7 @@ function getNativeStackTrace(error: Error) {
 
 const lineColRe = /:\d+:\d+$/;
 const nsFilePathRe = /(file|webpack):\/\/\/.*?app\//g;
+
 const hermesStacktraceFormatRe = /[\s\t]*at\s+.*?\s*?\(.*?(\d+:\d+)?\)/gs;
 
 function serialiseJsCoreFrame(frame: string) {
@@ -104,24 +113,18 @@ function serialiseJsCoreFrame(frame: string) {
 }
 
 function serialiseHermesFrame(frame: string) {
-    // expected format is as follows:
-    //   release
-    //     "at $method (address at $filename:$lineNumber:$columnNumber)"
-    //   dev
-    //     "at $method ($filename:$lineNumber:$columnNumber)"
-    const isFrame = frame.indexOf('at ') >= 0;
-    if (!isFrame) {
-        return null;
-    }
+
     const writer = NSMutableDictionary.new();
 
-    const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
+    // const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
+    const srcInfoStart = frame.lastIndexOf('(');
     const srcInfoEnd = frame.lastIndexOf(')');
     const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
 
     const methodStart = frame.indexOf('at ') !== -1 ? 'at '.length : 0;
     const methodEnd = frame.indexOf('(');
     const hasMethodInfo = methodStart < methodEnd;
+    // clog('serialiseHermesFrame1', frame, hasSrcInfo, hasMethodInfo, methodStart, methodEnd, srcInfoStart, srcInfoEnd);
 
     // serialise srcInfo
     if (hasSrcInfo || hasMethodInfo) {
@@ -130,6 +133,7 @@ function serialiseHermesFrame(frame: string) {
             const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
             // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
             // so that we can extract just the filename portion "index.android.bundle"
+            // clog('serialiseHermesFrame', frame, hasSrcInfo, hasMethodInfo, methodStart, methodEnd, srcInfoStart, srcInfoEnd, srcInfo);
             const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, './');
 
             writer.setObjectForKey(file, 'file');
@@ -145,113 +149,12 @@ function serialiseHermesFrame(frame: string) {
                 if (columnNumber != null) {
                     writer.setObjectForKey(columnNumber, 'columnNumber');
                 }
-                // clog('frame test', frame, frame.substring(methodStart, methodEnd), lineNumber, columnNumber, srcInfo, file);
             }
+            // clog('frame test', frame, NSDicttoJSON(writer));
         }
     }
     return writer;
 }
-// function BSGParseJavaScriptStacktrace(stacktrace: string) {
-//     if (!stacktrace) {
-//         return null;
-//     }
-//     const frames = NSMutableArray.new();
-//     let match = stackTraceRegex.exec(stacktrace);
-//     // const bundleURL = NSBundle.mainBundle.bundleURL;
-//     while (match != null) {
-//         const frame = NSMutableDictionary.new();
-//         if (!!match[1]) {
-//             frame.setObjectForKey(match[1], 'method');
-//         }
-//         if (!!match[2]) {
-//             frame.setObjectForKey(parseInt(match[4], 10), 'columnNumber');
-//             frame.setObjectForKey(parseInt(match[3], 10), 'lineNumber');
-//             frame.setObjectForKey(match[2].replace(nsFilePathRe, ''), 'file');
-//             console.log('stack frame', stacktrace, parseInt(match[4], 10), parseInt(match[3], 10), match[2].replace(nsFilePathRe, ''));
-//         } else {
-//             // native code ignore line/column
-//             frame.setObjectForKey(0, 'columnNumber');
-//             frame.setObjectForKey(0, 'lineNumber');
-//             frame.setObjectForKey(match[5].replace(nsFilePathRe, ''), 'file');
-//         }
-
-//         frames.addObject(frame);
-//         match = stackTraceRegex.exec(stacktrace);
-//     }
-//     // const methodSeparator = '@';
-//     // const locationSeparator = ':';
-//     // const lines = stacktrace.split('\n');
-//     // const frames = NSMutableArray.alloc().initWithCapacity(lines.length);
-//     // lines.forEach(line => {
-//     //     const frame = NSMutableDictionary.new();
-//     //     let location = line;
-//     //     let index = location.indexOf(methodSeparator);
-//     //     if (index !== -1) {
-//     //         frame.setObjectForKey(location.substring(index), 'method');
-//     //     }
-//     //     index = location.lastIndexOf(locationSeparator);
-//     //     if (index !== -1) {
-//     //         frame.setObjectForKey(location.substring(index), 'columnNumber');
-//     //         location = location.substring(0, index);
-//     //     }
-//     //     index = location.lastIndexOf(locationSeparator);
-//     //     if (index !== -1) {
-//     //         frame.setObjectForKey(location.substring(index), 'lineNumber');
-//     //         location = location.substring(0, index);
-//     //     }
-//     //     const bundleURL = NSBundle.mainBundle.bundleURL;
-//     //     index = location.indexOf(bundleURL.absoluteString);
-//     //     if (index !== -1) {
-//     //         location = bundleURL.absoluteString;
-//     //     } else {
-//     //         index = location.indexOf(bundleURL.path);
-//     //         if (index !== -1) {
-//     //             location = bundleURL.path;
-//     //         }
-//     //     }
-//     //     frame.setObjectForKey(location, 'file');
-//     //     frames.addObject(frame);
-//     // });
-//     // for (NSString *line in lines) {
-//     //     NSMutableDictionary *frame = [NSMutableDictionary new];
-//     //     NSString *location = line;
-//     //     NSRange methodRange = [line rangeOfCharacterFromSet:methodSeparator];
-//     //     if (methodRange.location != NSNotFound) {
-//     //         frame[@"method"] = [line substringToIndex:methodRange.location];
-//     //         location = [line substringFromIndex:methodRange.location + 1];
-//     //     }
-//     //     NSRange search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
-//     //     if (search.location != NSNotFound) {
-//     //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
-//     //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
-//     //         if (value) {
-//     //             frame[@"columnNumber"] = value;
-//     //             location = [location substringToIndex:search.location];
-//     //         }
-//     //     }
-//     //     search = [location rangeOfCharacterFromSet:locationSeparator options:NSBackwardsSearch];
-//     //     if (search.location != NSNotFound) {
-//     //         NSRange matchRange = NSMakeRange(search.location + 1, location.length - search.location - 1);
-//     //         NSNumber *value = [formatter numberFromString:[location substringWithRange:matchRange]];
-//     //         if (value) {
-//     //             frame[@"lineNumber"] = value;
-//     //             location = [location substringToIndex:search.location];
-//     //         }
-//     //     }
-//     //     NSURL *bundleURL = [[NSBundle mainBundle] bundleURL];
-//     //     search = [location rangeOfString:[bundleURL absoluteString]];
-//     //     if (search.location != NSNotFound) {
-//     //         location = [location substringFromIndex:search.location + search.length];
-//     //     } else {
-//     //         search = [location rangeOfString:[bundleURL path]];
-//     //         if (search.location != NSNotFound)
-//     //             location = [location substringFromIndex:search.location + search.length + 1];
-//     //     }
-//     //     frame[@"file"] = location;
-//     //     [frames addObject:frame];
-//     // }
-//     return frames;
-// }
 
 export enum BreadcrumbType {
     ERROR = BSGBreadcrumbType.Error,
@@ -339,7 +242,7 @@ export class Client extends ClientBase {
         }
     }
     /**
-     * Clear custom user data and reset to the default device identifier
+     * clear custom user data and reset to the default device identifier
      */
     clearUser() {
         if (this._initialized) {
@@ -354,7 +257,7 @@ export class Client extends ClientBase {
                 const exception = NSException.exceptionWithNameReasonUserInfo(options.errorClass || 'JavascriptError', options.errorMessage, null);
                 Bugsnag.internalClientNotifyWithDataBlock(exception, getNativeMap(options), (report: BugsnagCrashReport) => {
                     if (options.stacktrace) {
-                        const isHermes = options.stacktrace.match(hermesStacktraceFormatRe);
+                        // const isHermes = options.stacktrace.match(hermesStacktraceFormatRe);
                         const frames = NSMutableArray.new();
                         options.stacktrace.split('\n').forEach(frame => {
                             // if (isHermes) {
@@ -414,7 +317,7 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
         return result;
     }
     /**
-     * Whether reports should be sent to Bugsnag, based on the release stage
+     * whether reports should be sent to Bugsnag, based on the release stage
      * configuration
      */
     shouldNotify() {
@@ -426,28 +329,4 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
             return callback(report);
         });
     }
-    // public getMetaData(): com.bugsnag.android.MetaData;
-    // public setMetaData(param0: com.bugsnag.android.MetaData): void;
-    // public inProject(param0: string): boolean;
-    // public beforeSend(param0: com.bugsnag.android.BeforeSend): void;
-    // public getBeforeSendTasks(): java.util.Collection<com.bugsnag.android.BeforeSend>;
-    // public beforeNotify(param0: com.bugsnag.android.BeforeNotify): void;
-    // public update(param0: java.util.Observable, param1: any): void;
-    // public setDelivery(param0: com.bugsnag.android.Delivery): void;
-    // public getNotifyReleaseStages(): native.Array<string>;
-    // public getProjectPackages(): native.Array<string>;
-    // public getIgnoreClasses(): native.Array<string>;
-    // public setProjectPackages(param0: native.Array<string>): void;
-    // public getBeforeRecordBreadcrumbTasks(): java.util.Collection<com.bugsnag.android.BeforeRecordBreadcrumb>;
-    // public getDelivery(): com.bugsnag.android.Delivery;
-    // public getMaxBreadcrumbs(): number;
-    // public setFilters(param0: native.Array<string>): void;
-    // public setEndpoints(param0: string, param1: string): void;
-    // public getFilters(): native.Array<string>;
-    // public getBeforeNotifyTasks(): java.util.Collection<com.bugsnag.android.BeforeNotify>;
-    // public setIgnoreClasses(param0: native.Array<string>): void;
-    // public setNotifyReleaseStages(param0: native.Array<string>): void;
-    // public getErrorApiHeaders(): java.util.Map<string, string>;
-    // public getSessionApiHeaders(): java.util.Map<string, string>;
-    // public beforeRecordBreadcrumb(param0: com.bugsnag.android.BeforeRecordBreadcrumb): void;
 }
