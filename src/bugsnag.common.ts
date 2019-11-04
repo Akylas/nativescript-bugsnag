@@ -50,8 +50,8 @@ export abstract class ClientBase {
         }
     }
     /**
-     * Registers a global error handler which sends any uncaught error to
-     * Bugsnag before invoking the previous handler, if any.
+     * registers a global error handler which sends any uncaught error to
+     * bugsnag before invoking the previous handler, if any.
      */
     handleUncaughtErrors() {
         application.on(application.uncaughtErrorEvent, this.onNativeError, this);
@@ -247,7 +247,7 @@ class HandledState {
     constructor(public originalSeverity, public unhandled, public severityReason) {}
 }
 /**
- * A report generated from an error
+ * a report generated from an error
  */
 export class Report {
     errorClass;
@@ -277,7 +277,7 @@ export class Report {
     }
 
     /**
-     * Attach additional diagnostic data to the report. The key/value pairs
+     * attach additional diagnostic data to the report. The key/value pairs
      * are grouped into sections.
      */
     addMetadata = (section, key, value) => {
@@ -285,11 +285,11 @@ export class Report {
             this.metadata[section] = {};
         }
         this.metadata[section][key] = value;
-    }
+    };
 
     addMetadatas = object => {
         Object.assign(this.metadata, object);
-    }
+    };
 
     toJSON = () => {
         if (!this._handledState || !(this._handledState instanceof HandledState)) {
@@ -320,5 +320,5 @@ export class Report {
             unhandled: isUnhandled,
             severityReason: severityType
         };
-    }
+    };
 }
