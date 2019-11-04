@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.12](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.11...v1.0.12) (2019-11-04)
+
+
+### Bug Fixes
+
+* better android plugin ([5fe49b1](https://github.com/Akylas/nativescript-bugsnag/commit/5fe49b16903eb73979b56c616da8cd28f747d0c1))
+
+
+
+
+
 ## [1.0.11](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.10...v1.0.11) (2019-10-22)
 
 **Note:** Version bump only for package nativescript-bugsnag
