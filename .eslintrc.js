@@ -14,7 +14,7 @@ module.exports = {
         '@typescript-eslint/array-type': 'error',
         '@typescript-eslint/await-thenable': 'error',
         '@typescript-eslint/ban-types': 'off',
-        '@typescript-eslint/class-name-casing': 'error',
+        '@typescript-eslint/class-name-casing': 'off',
         '@typescript-eslint/consistent-type-assertions': 'error',
         '@typescript-eslint/consistent-type-definitions': 'error',
         '@typescript-eslint/explicit-member-accessibility': [
@@ -32,7 +32,8 @@ module.exports = {
                 },
                 FunctionExpression: {
                     parameters: 'first'
-                }
+                },
+                SwitchCase:1
             }
         ],
         '@typescript-eslint/interface-name-prefix': 'off',
@@ -43,7 +44,7 @@ module.exports = {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-floating-promises': 'off',
         '@typescript-eslint/no-inferrable-types': 'off',
-        '@typescript-eslint/no-misused-new': 'error',
+        '@typescript-eslint/no-misused-new': 'off',
         '@typescript-eslint/no-namespace': 'off',
         '@typescript-eslint/no-parameter-properties': 'off',
         '@typescript-eslint/no-require-imports': 'off',
