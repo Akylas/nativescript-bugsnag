@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.13](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.12...v1.0.13) (2019-11-05)
+
+
+### Bug Fixes
+
+* a lot of fixes ([a9aabfd](https://github.com/Akylas/nativescript-bugsnag/commit/a9aabfdabab626d281f1675f047480130d2f1778))
+
+
+
+
+
 ## [1.0.12](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.11...v1.0.12) (2019-11-04)
 
 
