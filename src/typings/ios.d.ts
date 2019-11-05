@@ -1,21 +1,19 @@
-
 declare const enum BSGBreadcrumbType {
+    Manual = 0,
 
-	Manual = 0,
+    Error = 1,
 
-	Error = 1,
+    Log = 2,
 
-	Log = 2,
+    Navigation = 3,
 
-	Navigation = 3,
+    Process = 4,
 
-	Process = 4,
+    Request = 5,
 
-	Request = 5,
+    State = 6,
 
-	State = 6,
-
-	User = 7
+    User = 7
 }
 
 declare function BSGFormatSeverity(severity: BSGSeverity): string;
@@ -23,297 +21,288 @@ declare function BSGFormatSeverity(severity: BSGSeverity): string;
 declare function BSGParseSeverity(severity: string): BSGSeverity;
 
 declare const enum BSGSeverity {
+    Error = 0,
 
-	Error = 0,
+    Warning = 1,
 
-	Warning = 1,
-
-	Info = 2
+    Info = 2
 }
 
 interface BSG_KSCrashReportWriter {
-	addBooleanElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: boolean) => void>;
-	addFloatingPointElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
-	addIntegerElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
-	addUIntegerElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
-	addStringElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
-	addTextFileElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
-	addJSONFileElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
-	addDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string, p4: number) => void>;
-	beginDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
-	appendDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
-	endDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
-	addUUIDElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
-	addJSONElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
-	beginObject: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
-	beginArray: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
-	endContainer: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
-	context: interop.Pointer | interop.Reference<any>;
+    addBooleanElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: boolean) => void>;
+    addFloatingPointElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
+    addIntegerElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
+    addUIntegerElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
+    addStringElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
+    addTextFileElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
+    addJSONFileElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
+    addDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string, p4: number) => void>;
+    beginDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
+    appendDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: number) => void>;
+    endDataElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
+    addUUIDElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
+    addJSONElement: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string, p3: string) => void>;
+    beginObject: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
+    beginArray: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>, p2: string) => void>;
+    endContainer: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
+    context: interop.Pointer | interop.Reference<any>;
 }
-declare var BSG_KSCrashReportWriter: interop.StructType<BSG_KSCrashReportWriter>;
+declare const BSG_KSCrashReportWriter: interop.StructType<BSG_KSCrashReportWriter>;
 
 declare class Bugsnag extends NSObject {
+    static addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
 
-	static addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
+    static alloc(): Bugsnag; // inherited from NSObject
 
-	static alloc(): Bugsnag; // inherited from NSObject
+    static appDidCrashLastLaunch(): boolean;
 
-	static appDidCrashLastLaunch(): boolean;
+    static clearBreadcrumbs(): void;
 
-	static clearBreadcrumbs(): void;
+    static clearTabWithName(tabName: string): void;
 
-	static clearTabWithName(tabName: string): void;
+    static configuration(): BugsnagConfiguration;
 
-	static configuration(): BugsnagConfiguration;
+    static internalClientNotifyWithDataBlock(exception: NSException, metaData: NSDictionary<any, any>, block: (p1: BugsnagCrashReport) => void): void;
 
-	static internalClientNotifyWithDataBlock(exception: NSException, metaData: NSDictionary<any, any>, block: (p1: BugsnagCrashReport) => void): void;
+    static leaveBreadcrumbForNotificationName(notificationName: string): void;
 
-	static leaveBreadcrumbForNotificationName(notificationName: string): void;
+    static leaveBreadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): void;
 
-	static leaveBreadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): void;
+    static leaveBreadcrumbWithMessage(message: string): void;
 
-	static leaveBreadcrumbWithMessage(message: string): void;
+    static new(): Bugsnag; // inherited from NSObject
 
-	static new(): Bugsnag; // inherited from NSObject
+    static notify(exception: NSException): void;
 
-	static notify(exception: NSException): void;
+    static notifyBlock(exception: NSException, block: (p1: BugsnagCrashReport) => void): void;
 
-	static notifyBlock(exception: NSException, block: (p1: BugsnagCrashReport) => void): void;
+    static notifyError(error: NSError): void;
 
-	static notifyError(error: NSError): void;
+    static notifyErrorBlock(error: NSError, block: (p1: BugsnagCrashReport) => void): void;
 
-	static notifyErrorBlock(error: NSError, block: (p1: BugsnagCrashReport) => void): void;
+    static notifyWithData(exception: NSException, metaData: NSDictionary<any, any>): void;
 
-	static notifyWithData(exception: NSException, metaData: NSDictionary<any, any>): void;
+    static notifyWithDataAtSeverity(exception: NSException, metaData: NSDictionary<any, any>, severity: string): void;
 
-	static notifyWithDataAtSeverity(exception: NSException, metaData: NSDictionary<any, any>, severity: string): void;
+    static payloadDateFormatter(): NSDateFormatter;
 
-	static payloadDateFormatter(): NSDateFormatter;
+    static resumeSession(): boolean;
 
-	static resumeSession(): boolean;
+    static setBreadcrumbCapacity(capacity: number): void;
 
-	static setBreadcrumbCapacity(capacity: number): void;
+    static setReportWhenDebuggerIsAttached(reportWhenDebuggerIsAttached: boolean): void;
 
-	static setReportWhenDebuggerIsAttached(reportWhenDebuggerIsAttached: boolean): void;
+    static setSuspendThreadsForUserReported(suspendThreadsForUserReported: boolean): void;
 
-	static setSuspendThreadsForUserReported(suspendThreadsForUserReported: boolean): void;
+    static setThreadTracingEnabled(threadTracingEnabled: boolean): void;
 
-	static setThreadTracingEnabled(threadTracingEnabled: boolean): void;
+    static setWriteBinaryImagesForUserReported(writeBinaryImagesForUserReported: boolean): void;
 
-	static setWriteBinaryImagesForUserReported(writeBinaryImagesForUserReported: boolean): void;
+    static startBugsnagWithApiKey(apiKey: string): void;
 
-	static startBugsnagWithApiKey(apiKey: string): void;
+    static startBugsnagWithConfiguration(configuration: BugsnagConfiguration): void;
 
-	static startBugsnagWithConfiguration(configuration: BugsnagConfiguration): void;
+    static startSession(): void;
 
-	static startSession(): void;
-
-	static stopSession(): void;
+    static stopSession(): void;
 }
 
 declare class BugsnagBreadcrumb extends NSObject {
+    static alloc(): BugsnagBreadcrumb; // inherited from NSObject
 
-	static alloc(): BugsnagBreadcrumb; // inherited from NSObject
+    static breadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): BugsnagBreadcrumb;
 
-	static breadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): BugsnagBreadcrumb;
+    static new(): BugsnagBreadcrumb; // inherited from NSObject
 
-	static new(): BugsnagBreadcrumb; // inherited from NSObject
+    metadata: NSDictionary<any, any>;
 
-	metadata: NSDictionary<any, any>;
+    name: string;
 
-	name: string;
+    readonly timestamp: Date;
 
-	readonly timestamp: Date;
-
-	type: BSGBreadcrumbType;
+    type: BSGBreadcrumbType;
 }
 
 declare class BugsnagBreadcrumbs extends NSObject {
+    static alloc(): BugsnagBreadcrumbs; // inherited from NSObject
 
-	static alloc(): BugsnagBreadcrumbs; // inherited from NSObject
+    static new(): BugsnagBreadcrumbs; // inherited from NSObject
 
-	static new(): BugsnagBreadcrumbs; // inherited from NSObject
+    readonly cachePath: string;
 
-	readonly cachePath: string;
+    capacity: number;
 
-	capacity: number;
+    readonly count: number;
+    [index: number]: BugsnagBreadcrumb;
 
-	readonly count: number;
-	[index: number]: BugsnagBreadcrumb;
+    addBreadcrumb(breadcrumbMessage: string): void;
 
-	addBreadcrumb(breadcrumbMessage: string): void;
+    addBreadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): void;
 
-	addBreadcrumbWithBlock(block: (p1: BugsnagBreadcrumb) => void): void;
+    arrayValue(): NSArray<any>;
 
-	arrayValue(): NSArray<any>;
+    cachedBreadcrumbs(): NSDictionary<any, any>;
 
-	cachedBreadcrumbs(): NSDictionary<any, any>;
+    clearBreadcrumbs(): void;
 
-	clearBreadcrumbs(): void;
-
-	objectAtIndexedSubscript(index: number): BugsnagBreadcrumb;
+    objectAtIndexedSubscript(index: number): BugsnagBreadcrumb;
 }
 
 declare class BugsnagConfiguration extends NSObject {
+    static alloc(): BugsnagConfiguration; // inherited from NSObject
 
-	static alloc(): BugsnagConfiguration; // inherited from NSObject
+    static new(): BugsnagConfiguration; // inherited from NSObject
 
-	static new(): BugsnagConfiguration; // inherited from NSObject
+    apiKey: string;
 
-	apiKey: string;
+    appVersion: string;
 
-	appVersion: string;
+    autoNotify: boolean;
 
-	autoNotify: boolean;
+    automaticallyCollectBreadcrumbs: boolean;
 
-	automaticallyCollectBreadcrumbs: boolean;
+    readonly beforeNotifyHooks: NSArray<any>;
 
-	readonly beforeNotifyHooks: NSArray<any>;
+    readonly beforeSendBlocks: NSArray<(p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean>;
 
-	readonly beforeSendBlocks: NSArray<(p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean>;
+    readonly breadcrumbs: BugsnagBreadcrumbs;
 
-	readonly breadcrumbs: BugsnagBreadcrumbs;
+    codeBundleId: string;
 
-	codeBundleId: string;
+    config: BugsnagMetaData;
 
-	config: BugsnagMetaData;
+    context: string;
 
-	context: string;
+    metaData: BugsnagMetaData;
 
-	metaData: BugsnagMetaData;
+    notifierType: string;
 
-	notifierType: string;
+    notifyReleaseStages: NSArray<any>;
 
-	notifyReleaseStages: NSArray<any>;
+    readonly notifyURL: NSURL;
 
-	readonly notifyURL: NSURL;
+    onCrashHandler: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
 
-	onCrashHandler: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<BSG_KSCrashReportWriter>) => void>;
+    releaseStage: string;
 
-	releaseStage: string;
+    reportBackgroundOOMs: boolean;
 
-	reportBackgroundOOMs: boolean;
+    session: NSURLSession;
 
-	session: NSURLSession;
+    readonly sessionURL: NSURL;
 
-	readonly sessionURL: NSURL;
+    shouldAutoCaptureSessions: boolean;
 
-	shouldAutoCaptureSessions: boolean;
+    addBeforeNotifyHook(hook: (p1: NSArray<any>, p2: NSDictionary<any, any>) => NSDictionary<any, any>): void;
 
-	addBeforeNotifyHook(hook: (p1: NSArray<any>, p2: NSDictionary<any, any>) => NSDictionary<any, any>): void;
+    addBeforeSendBlock(block: (p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean): void;
 
-	addBeforeSendBlock(block: (p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean): void;
+    clearBeforeSendBlocks(): void;
 
-	clearBeforeSendBlocks(): void;
+    errorApiHeaders(): NSDictionary<any, any>;
 
-	errorApiHeaders(): NSDictionary<any, any>;
+    hasValidApiKey(): boolean;
 
-	hasValidApiKey(): boolean;
+    sessionApiHeaders(): NSDictionary<any, any>;
 
-	sessionApiHeaders(): NSDictionary<any, any>;
+    setEndpointsForNotifySessions(notify: string, sessions: string): void;
 
-	setEndpointsForNotifySessions(notify: string, sessions: string): void;
+    setUserWithNameAndEmail(userId: string, name: string, email: string): void;
 
-	setUserWithNameAndEmail(userId: string, name: string, email: string): void;
-
-	shouldSendReports(): boolean;
+    shouldSendReports(): boolean;
 }
 
 declare class BugsnagCrashReport extends NSObject {
+    static alloc(): BugsnagCrashReport; // inherited from NSObject
 
-	static alloc(): BugsnagCrashReport; // inherited from NSObject
+    static new(): BugsnagCrashReport; // inherited from NSObject
 
-	static new(): BugsnagCrashReport; // inherited from NSObject
+    app: NSDictionary<any, any>;
 
-	app: NSDictionary<any, any>;
+    appState: NSDictionary<any, any>;
 
-	appState: NSDictionary<any, any>;
+    breadcrumbs: NSArray<any>;
 
-	breadcrumbs: NSArray<any>;
+    context: string;
 
-	context: string;
+    depth: number;
 
-	depth: number;
+    device: NSDictionary<any, any>;
 
-	device: NSDictionary<any, any>;
+    deviceState: NSDictionary<any, any>;
 
-	deviceState: NSDictionary<any, any>;
+    error: NSDictionary<any, any>;
 
-	error: NSDictionary<any, any>;
+    errorClass: string;
 
-	errorClass: string;
+    errorMessage: string;
 
-	errorMessage: string;
+    groupingHash: string;
 
-	groupingHash: string;
+    readonly incomplete: boolean;
 
-	readonly incomplete: boolean;
+    metaData: NSDictionary<any, any>;
 
-	metaData: NSDictionary<any, any>;
+    notifyReleaseStages: NSArray<any>;
 
-	notifyReleaseStages: NSArray<any>;
+    readonly overrides: NSDictionary<any, any>;
 
-	readonly overrides: NSDictionary<any, any>;
+    releaseStage: string;
 
-	releaseStage: string;
+    severity: BSGSeverity;
 
-	severity: BSGSeverity;
+    // constructor(o: { KSReport: NSDictionary<any, any> });
 
-	constructor(o: { KSReport: NSDictionary<any, any>; });
+    constructor(o: { KSReport: NSDictionary<any, any>; fileMetadata?: string });
 
-	constructor(o: { KSReport: NSDictionary<any, any>; fileMetadata: string; });
+    addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
 
-	addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
+    addMetadataToTabWithName(metadata: NSDictionary<any, any>, tabName: string): void;
 
-	addMetadataToTabWithName(metadata: NSDictionary<any, any>, tabName: string): void;
+    attachCustomStacktraceWithType(frames: NSArray<any> | any[], type: string): void;
 
-	attachCustomStacktraceWithType(frames: NSArray<any> | any[], type: string): void;
+    enhancedErrorMessageForThread(thread: NSDictionary<any, any>): string;
 
-	enhancedErrorMessageForThread(thread: NSDictionary<any, any>): string;
+    initWithKSReport(report: NSDictionary<any, any>): this;
 
-	initWithKSReport(report: NSDictionary<any, any>): this;
+    initWithKSReportFileMetadata(report: NSDictionary<any, any>, metadata: string): this;
 
-	initWithKSReportFileMetadata(report: NSDictionary<any, any>, metadata: string): this;
+    serializableValueWithTopLevelData(data: NSMutableDictionary<any, any>): NSDictionary<any, any>;
 
-	serializableValueWithTopLevelData(data: NSMutableDictionary<any, any>): NSDictionary<any, any>;
+    shouldBeSent(): boolean;
 
-	shouldBeSent(): boolean;
-
-	toJson(): NSDictionary<any, any>;
+    toJson(): NSDictionary<any, any>;
 }
 
 declare class BugsnagMetaData extends NSObject implements NSMutableCopying {
+    static alloc(): BugsnagMetaData; // inherited from NSObject
 
-	static alloc(): BugsnagMetaData; // inherited from NSObject
+    static new(): BugsnagMetaData; // inherited from NSObject
 
-	static new(): BugsnagMetaData; // inherited from NSObject
+    delegate: BugsnagMetaDataDelegate;
 
-	delegate: BugsnagMetaDataDelegate;
+    constructor(o: { dictionary: NSMutableDictionary<any, any> });
 
-	constructor(o: { dictionary: NSMutableDictionary<any, any>; });
+    addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
 
-	addAttributeWithValueToTabWithName(attributeName: string, value: any, tabName: string): void;
+    clearTab(tabName: string): void;
 
-	clearTab(tabName: string): void;
+    getTab(tabName: string): NSMutableDictionary<any, any>;
 
-	getTab(tabName: string): NSMutableDictionary<any, any>;
+    initWithDictionary(dict: NSMutableDictionary<any, any>): this;
 
-	initWithDictionary(dict: NSMutableDictionary<any, any>): this;
+    mutableCopyWithZone(zone: interop.Pointer | interop.Reference<any>): any;
 
-	mutableCopyWithZone(zone: interop.Pointer | interop.Reference<any>): any;
-
-	toDictionary(): NSDictionary<any, any>;
+    toDictionary(): NSDictionary<any, any>;
 }
 
 interface BugsnagMetaDataDelegate extends NSObjectProtocol {
-
-	metaDataChanged(metaData: BugsnagMetaData): void;
+    metaDataChanged(metaData: BugsnagMetaData): void;
 }
-declare var BugsnagMetaDataDelegate: {
-
-	prototype: BugsnagMetaDataDelegate;
+declare const BugsnagMetaDataDelegate: {
+    prototype: BugsnagMetaDataDelegate;
 };
 
-declare var BugsnagVersionNumber: number;
+declare const BugsnagVersionNumber: number;
 
-declare var BugsnagVersionString: interop.Reference<number>;
+declare const BugsnagVersionString: interop.Reference<number>;

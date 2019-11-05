@@ -1,5 +1,5 @@
 import { BREADCRUMB_MAX_LENGTH, BaseNative, ClientBase, cerror, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
-import { ConfigurationOptions, NativePropertyOptions } from './bugsnag';
+import { ConfigurationOptions, NativePropertyOptions, NotifyOptions } from './bugsnag';
 
 function nativePropertyGenerator(target: Object, key: string, options?: NativePropertyOptions) {
     // clog('mapPropertyGenerator', key, Object.keys(options));
@@ -113,7 +113,6 @@ function serialiseJsCoreFrame(frame: string) {
 }
 
 function serialiseHermesFrame(frame: string) {
-
     const writer = NSMutableDictionary.new();
 
     // const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
@@ -165,6 +164,13 @@ export enum BreadcrumbType {
     REQUEST = BSGBreadcrumbType.Request,
     STATE = BSGBreadcrumbType.State,
     USER = BSGBreadcrumbType.User
+}
+
+export class Report {
+    constructor(private report: BugsnagCrashReport) {}
+    public addToTab(tab: string, name: string, value: any) {
+        this.report.addAttributeWithValueToTabWithName(name, value, tab);
+    }
 }
 export class Client extends ClientBase {
     config: Configuration;
@@ -241,6 +247,14 @@ export class Client extends ClientBase {
             Bugsnag.resumeSession();
         }
     }
+
+    clearTab(name: string) {
+        Bugsnag.clearTabWithName(name);
+    }
+    public addToTab(tab: string, name: string, value: any) {
+        Bugsnag.addAttributeWithValueToTabWithName(name, value, tab);
+    }
+
     /**
      * clear custom user data and reset to the default device identifier
      */
@@ -324,9 +338,9 @@ export class Configuration extends BaseNative<BugsnagConfiguration, Configuratio
         return !this.options.releaseStage || !this.options.notifyReleaseStages || this.options.notifyReleaseStages.indexOf(this.options.releaseStage) !== -1;
     }
 
-    set beforeSend(callback) {
+    set beforeSend(callback: (report: Report) => boolean) {
         this.getNative().addBeforeSendBlock(function(rawData, report) {
-            return callback(report);
+            return callback(new Report(report));
         });
     }
 }

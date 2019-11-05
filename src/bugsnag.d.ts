@@ -1,3 +1,5 @@
+import { Report } from './bugsnag.common';
+
 export abstract class BaseNative<T, U extends {}> {
     options?: U;
     native: T;
@@ -65,6 +67,10 @@ export enum BreadcrumbType {
     USER
 }
 
+export class BugsnagReport {
+    public addToTab(tab: string, name: string, value: any);
+}
+
 export class Configuration extends BaseNative<any, ConfigurationOptions> {
     apiKey: string;
     autoNotify: boolean;
@@ -89,34 +95,35 @@ export class Configuration extends BaseNative<any, ConfigurationOptions> {
     automaticallyCollectBreadcrumbs?: boolean;
     notifyReleaseStages: string[];
     shouldNotify(): boolean;
-    beforeSendCallbacks?;
+    beforeSend: (report: BugsnagReport) => boolean;
+    beforeSendCallbacks?: ((report: Report, error: string | Error) => boolean)[];
 }
 
 export interface NotifyOptions {
     error: Error | string;
     metadata?: { [k: string]: any };
-    beforeSendReportCallback?: (report)=>void;
     blocking?: boolean;
-    postSendCallback?: (value?:boolean)=>void;
+    beforeSendReportCallback?: (report: Report) => void;
+    postSendCallback?: (report: Report, value?: boolean) => void;
 }
 export class Client {
     conf: Configuration;
     init(conf: Configuration | ConfigurationOptions | string): Promise<any>;
     /**
-     * Leaves a 'breadcrumb' log message. The most recent breadcrumbs
+     * leaves a 'breadcrumb' log message. The most recent breadcrumbs
      * are attached to subsequent error reports.
      */
-    leaveBreadcrumb(message: string);
-    leaveBreadcrumb(name: string, type: BreadcrumbType, metaData?: { [k: string]: string });
+    // leaveBreadcrumb(message: string);
+    leaveBreadcrumb(name: string, type?: BreadcrumbType, metaData?: { [k: string]: string });
 
     /**
-     * Registers a global error handler which sends any uncaught error to
-     * Bugsnag before invoking the previous handler, if any.
+     * registers a global error handler which sends any uncaught error to
+     * bugsnag before invoking the previous handler, if any.
      */
     handleUncaughtErrors();
 
     /**
-     * Sends an error report to Bugsnag
+     * sends an error report to Bugsnag
      * @param error               The error instance to report
      * @param metadata            Optional metadata
      * @param beforeSendCallback  A callback invoked before the report is sent
@@ -125,7 +132,7 @@ export class Client {
      */
     notify(options: NotifyOptions | Error | string);
     /**
-     * Starts tracking a new session. You should disable automatic session tracking via
+     * starts tracking a new session. You should disable automatic session tracking via
      * `autoCaptureSessions` if you call this method.
      *
      * You should call this at the appropriate time in your application when you wish to start a
@@ -142,7 +149,7 @@ export class Client {
      */
     startSession();
     /**
-     * Stops tracking a session. You should disable automatic session tracking via
+     * stops tracking a session. You should disable automatic session tracking via
      * `autoCaptureSessions` if you call this method.
      *
      * You should call this at the appropriate time in your application when you wish to stop a
@@ -158,7 +165,7 @@ export class Client {
      */
     stopSession();
     /**
-     * Resumes a session which has previously been stopped, or starts a new session if none exists.
+     * resumes a session which has previously been stopped, or starts a new session if none exists.
      * If a session has already been resumed or started and has not been stopped, calling this
      * method will have no effect. You should disable automatic session tracking via
      * `autoCaptureSessions` if you call this method.
@@ -178,11 +185,11 @@ export class Client {
      */
     resumeSession();
     /**
-     * Clear custom user data and reset to the default device identifier
+     * clear custom user data and reset to the default device identifier
      */
     clearUser();
     /**
-     * Wraps all console log functions with a function that will leave a breadcrumb for
+     * wraps all console log functions with a function that will leave a breadcrumb for
      * each call, while continuing to call through to the original.
      *
      *   !!! Warning !!!
@@ -191,4 +198,7 @@ export class Client {
      */
     enableConsoleBreadcrumbs();
     disableConsoleBreadCrumbs();
+
+    clearTab(name: string);
+    addToTab(tab: string, name: string, value: any);
 }

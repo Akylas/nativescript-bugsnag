@@ -1,7 +1,7 @@
-import { BaseNative, BREADCRUMB_MAX_LENGTH, ClientBase, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
+import { BREADCRUMB_MAX_LENGTH, BaseNative, ClientBase, clog, createGetter, createSetter, cwarn } from './bugsnag.common';
 import { knownFolders } from 'tns-core-modules/file-system';
 import * as application from 'tns-core-modules/application';
-import { ConfigurationOptions, NativePropertyOptions } from './bugsnag';
+import { ConfigurationOptions, NativePropertyOptions, NotifyOptions } from './bugsnag';
 // const appPath = knownFolders.currentApp().path + '/';
 
 export enum BreadcrumbType {
@@ -30,7 +30,7 @@ export function nativeProperty(options: NativePropertyOptions): (target: any, k?
 export function nativeProperty(...args) {
     // clog('test deco', typeof args[0], Object.keys(args[0]), args[1], typeof args[1]);
     if (args.length === 1) {
-        /// this must be a factory
+        // this must be a factory
         return function(target: any, key?: string, descriptor?: PropertyDescriptor) {
             return nativePropertyGenerator(target, key, args[0] || {});
         };
@@ -83,7 +83,7 @@ function initJavaScriptException() {
         //   dev:
         //     "$method@?uri:$lineNumber:$columnNumber"
 
-        console.log('serialiseJsCoreFrame', frame       );
+        console.log('serialiseJsCoreFrame', frame);
         writer.beginObject();
         const methodComponents = frame.split('@', 2);
         let fragment = methodComponents[0];
@@ -126,7 +126,7 @@ function initJavaScriptException() {
         //     "at $method ($filename:$lineNumber:$columnNumber)"
 
         const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
-        const srcInfoEnd = frame.lastIndexOf(')') >= 0 ? frame.lastIndexOf(')') : (frame.length);
+        const srcInfoEnd = frame.lastIndexOf(')') >= 0 ? frame.lastIndexOf(')') : frame.length;
         const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
 
         const isFrame = frame.indexOf('at ') >= 0;
@@ -136,7 +136,6 @@ function initJavaScriptException() {
         const methodStart = frame.indexOf('at ') !== -1 ? 'at '.length : 0;
         const methodEnd = frame.indexOf(' (');
         const hasMethodInfo = methodStart < methodEnd;
-
 
         // serialise srcInfo
         if (hasSrcInfo || hasMethodInfo) {
@@ -200,9 +199,9 @@ function initJavaScriptException() {
                 const isHermes = this.rawStacktrace.match(hermesStacktraceFormatRe);
                 this.rawStacktrace.split('\n').forEach(frame => {
                     // if (isHermes) {
-                        serialiseHermesFrame(writer, frame.trim());
+                    serialiseHermesFrame(writer, frame.trim());
                     // } else {
-                        // serialiseJsCoreFrame(writer, frame.trim());
+                    // serialiseJsCoreFrame(writer, frame.trim());
                     // }
                 });
 
@@ -291,24 +290,17 @@ function initDiagnosticsCallback() {
                         });
                     }
                 });
-                // for (String tab : this.metadata.keySet()) {
-                //     Object value = metadata.get(tab);
-
-                //     if (value instanceof Map) {
-                //         @SuppressWarnings("unchecked") // ignore type erasure when casting Map
-                //         Map<String, Object> values = (Map<String, Object>) value;
-
-                //         for (String key : values.keySet()) {
-                //             reportMetadata.addToTab(tab, key, values.get(key));
-                //         }
-                //     }
-                // }
             }
         }
     }
     DiagnosticsCallback = DiagnosticsCallbackImpl as any;
 }
-
+export class Report {
+    constructor(private report: com.bugsnag.android.Error) {}
+    public addToTab(tab: string, name: string, value: any) {
+        this.report.addToTab(tab, name, value);
+    }
+}
 export class Client extends ClientBase {
     _client: com.bugsnag.android.Client;
     libraryVersion;
@@ -412,12 +404,19 @@ export class Client extends ClientBase {
         }
     }
     /**
-     * Clear custom user data and reset to the default device identifier
+     * clear custom user data and reset to the default device identifier
      */
     clearUser() {
         if (this._client) {
             this._client.clearUser();
         }
+    }
+
+    clearTab(name: string) {
+        com.bugsnag.android.Bugsnag.clearTab(name);
+    }
+    addToTab(tab: string, name: string, value: any) {
+        com.bugsnag.android.Bugsnag.addToTab(tab, name, value);
     }
     // leaveBreadcrumb(name: string, type: BreadcrumbType, metaData?: { [k: string]: string }) {
     //     if (this._client) {
@@ -440,8 +439,6 @@ export class Client extends ClientBase {
             const handler = new DiagnosticsCallback(this.libraryVersion, this.bugsnagAndroidVersion, options);
 
             const map = new java.util.HashMap();
-            //   String severity = payload.getString("severity");
-            //   String severityReason = payload.getString("severityReason");
             map.put('severity', options.severity);
             map.put('severityReason', options.severityReason);
             com.bugsnag.android.Bugsnag.internalClientNotify(exc, map, !!options.blocking, handler);
@@ -449,14 +446,6 @@ export class Client extends ClientBase {
         }
         return Promise.reject('not_initialized');
     }
-}
-
-function onBeforeNotifyError(error: com.bugsnag.android.Error) {
-    // if (error.getExceptionName() === 'com.tns.NativeScriptException') {
-    //     return false;
-    // }
-    // clog('onBeforeNotifyError', error.getExceptionName(), error.getExceptionMessage(), error.getGroupingHash(), error.getDeviceData(), error.getSeverity().getName(), error.getContext());
-    return true;
 }
 
 export class Configuration extends BaseNative<com.bugsnag.android.Configuration, ConfigurationOptions> {
@@ -498,25 +487,27 @@ export class Configuration extends BaseNative<com.bugsnag.android.Configuration,
     createNative(options?: ConfigurationOptions) {
         clog('Configuration', 'createNative', options);
         const result = new com.bugsnag.android.Configuration(options.apiKey);
-        result.beforeNotify(
-            new com.bugsnag.android.BeforeNotify({
-                run: onBeforeNotifyError
-            })
-        );
+        // result.beforeNotify(
+        //     new com.bugsnag.android.BeforeNotify({
+        //         run: (error: com.bugsnag.android.Error) => {
+        //             return true;
+        //         }
+        //     })
+        // );
         return result;
     }
 
-    set beforeSend(callback) {
+    set beforeSend(callback: (report: Report) => boolean) {
         this.getNative().beforeSend(
             new com.bugsnag.android.BeforeSend({
                 run(report) {
-                    return callback(report);
+                    return callback(new Report(report.getError()));
                 }
             })
         );
     }
     /**
-     * Whether reports should be sent to Bugsnag, based on the release stage
+     * whether reports should be sent to Bugsnag, based on the release stage
      * configuration
      */
     shouldNotify() {

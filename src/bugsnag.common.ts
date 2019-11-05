@@ -125,13 +125,13 @@ export abstract class ClientBase {
         // clog('notify', error instanceof Error, typeof error, error, error.message, error.stack);
         if (!(error instanceof Error)) {
             if (realOptions.postSendCallback) {
-                realOptions.postSendCallback(false);
+                realOptions.postSendCallback(null, false);
             }
             return Promise.reject('Bugsnag could not notify: error must be of type Error');
         }
         if (!this.config.shouldNotify()) {
             if (realOptions.postSendCallback) {
-                realOptions.postSendCallback(false);
+                realOptions.postSendCallback(null, false);
             }
             return Promise.reject(undefined);
         }
@@ -148,7 +148,7 @@ export abstract class ClientBase {
             for (const callback of this.config.beforeSendCallbacks) {
                 if (callback(report, realOptions.error) === false) {
                     if (realOptions.postSendCallback) {
-                        realOptions.postSendCallback(false);
+                        realOptions.postSendCallback(report, false);
                     }
                     return Promise.reject('cancelled');
                 }
@@ -165,12 +165,12 @@ export abstract class ClientBase {
         return this.handleNotify(payload)
             .then(() => {
                 if (realOptions.postSendCallback) {
-                    realOptions.postSendCallback();
+                    realOptions.postSendCallback(report);
                 }
             })
             .catch(err => {
                 if (realOptions.postSendCallback) {
-                    realOptions.postSendCallback(false);
+                    realOptions.postSendCallback(report, false);
                 }
                 return Promise.reject(err);
             });
