@@ -70,7 +70,7 @@ module.exports = {
         'arrow-body-style': 'error',
         'arrow-parens': ['off', 'as-needed'],
         camelcase: 'off',
-        'capitalized-comments': ['error', 'never'],
+        'capitalized-comments': 'off',
         complexity: 'off',
         'constructor-super': 'error',
         curly: ['error', 'multi-line'],
@@ -131,7 +131,7 @@ module.exports = {
             }
         ],
         'no-constant-condition': 'error',
-        'no-control-regex': 'error',
+        'no-control-regex': 'off',
         'no-debugger': 'error',
         'no-duplicate-imports': 'error',
         'no-empty': 'off',
