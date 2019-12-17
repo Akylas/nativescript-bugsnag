@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.14](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.13...v1.0.14) (2019-12-17)
+
+
+### Bug Fixes
+
+* ensure we dont call setObject:nil ([2da8f18](https://github.com/Akylas/nativescript-bugsnag/commit/2da8f1819e3c46533cedc7431bd25e2dff783355))
+
+
+
+
+
 ## [1.0.13](https://github.com/Akylas/nativescript-bugsnag/compare/v1.0.12...v1.0.13) (2019-11-05)
 
 
