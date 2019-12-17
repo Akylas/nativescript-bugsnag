@@ -42,9 +42,12 @@ function getNativeMap(obj: { [k: string]: string }) {
     const dict = NSMutableDictionary.new();
     for (const p in obj) {
         const prop = obj[p];
-        if (prop !== undefined) {
+        if (prop !== undefined && prop !== null) {
             if (typeof prop === 'object') {
-                dict.setObjectForKey(getNativeMap(prop), p);
+                const res = getNativeMap(prop);
+                if (res !== undefined && res !== null) {
+                    dict.setObjectForKey(res, p);
+                }
             } else {
                 dict.setObjectForKey(prop, p);
             }
@@ -81,7 +84,9 @@ function serialiseJsCoreFrame(frame: string) {
     const methodComponents = frame.split('@', 2);
     let fragment = methodComponents[0];
     if (methodComponents.length === 2) {
-        writer.setObjectForKey(methodComponents[0], 'method');
+        if (fragment) {
+            writer.setObjectForKey(fragment, 'method');
+        }
         fragment = methodComponents[1];
     }
 
@@ -106,8 +111,9 @@ function serialiseJsCoreFrame(frame: string) {
         }
         fragment = fragment.substring(0, lineNumberIndex);
     }
-
-    writer.setObjectForKey('file', fragment.replace(nsFilePathRe, ''));
+    if (nsFilePathRe) {
+        writer.setObjectForKey('file', fragment.replace(nsFilePathRe, ''));
+    }
 
     return writer;
 }
@@ -127,15 +133,19 @@ function serialiseHermesFrame(frame: string) {
 
     // serialise srcInfo
     if (hasSrcInfo || hasMethodInfo) {
-        writer.setObjectForKey(frame.substring(methodStart, methodEnd), 'method');
+        const method = frame.substring(methodStart, methodEnd);
+        if (method) {
+            writer.setObjectForKey(method, 'method');
+        }
         if (hasSrcInfo) {
             const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
             // matches `:123:34` at the end of a string such as "index.android.bundle:123:34"
             // so that we can extract just the filename portion "index.android.bundle"
             // clog('serialiseHermesFrame', frame, hasSrcInfo, hasMethodInfo, methodStart, methodEnd, srcInfoStart, srcInfoEnd, srcInfo);
             const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, './');
-
-            writer.setObjectForKey(file, 'file');
+            if (file) {
+                writer.setObjectForKey(file, 'file');
+            }
 
             const chunks = srcInfo.split(':');
             if (chunks.length >= 2) {
