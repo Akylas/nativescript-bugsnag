@@ -141,8 +141,6 @@ declare class BugsnagBreadcrumbs extends NSObject {
 
     arrayValue(): NSArray<any>;
 
-    cachedBreadcrumbs(): NSDictionary<any, any>;
-
     clearBreadcrumbs(): void;
 
     objectAtIndexedSubscript(index: number): BugsnagBreadcrumb;
@@ -157,13 +155,19 @@ declare class BugsnagConfiguration extends NSObject {
 
     appVersion: string;
 
+    autoDetectErrors: boolean;
+
     autoNotify: boolean;
+
+    autoTrackSessions: boolean;
 
     automaticallyCollectBreadcrumbs: boolean;
 
     readonly beforeNotifyHooks: NSArray<any>;
 
     readonly beforeSendBlocks: NSArray<(p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean>;
+
+    readonly beforeSendSessionBlocks: NSArray<(p1: NSMutableDictionary<any, any>) => void>;
 
     readonly breadcrumbs: BugsnagBreadcrumbs;
 
@@ -172,6 +176,8 @@ declare class BugsnagConfiguration extends NSObject {
     config: BugsnagMetaData;
 
     context: string;
+
+    maxBreadcrumbs: number;
 
     metaData: BugsnagMetaData;
 
@@ -187,6 +193,8 @@ declare class BugsnagConfiguration extends NSObject {
 
     reportBackgroundOOMs: boolean;
 
+    reportOOMs: boolean;
+
     session: NSURLSession;
 
     readonly sessionURL: NSURL;
@@ -196,6 +204,8 @@ declare class BugsnagConfiguration extends NSObject {
     addBeforeNotifyHook(hook: (p1: NSArray<any>, p2: NSDictionary<any, any>) => NSDictionary<any, any>): void;
 
     addBeforeSendBlock(block: (p1: NSDictionary<any, any>, p2: BugsnagCrashReport) => boolean): void;
+
+    addBeforeSendSession(block: (p1: NSMutableDictionary<any, any>) => void): void;
 
     clearBeforeSendBlocks(): void;
 
@@ -251,7 +261,6 @@ declare class BugsnagCrashReport extends NSObject {
 
     severity: BSGSeverity;
 
-    // constructor(o: { KSReport: NSDictionary<any, any> });
 
     constructor(o: { KSReport: NSDictionary<any, any>; fileMetadata?: string });
 
@@ -301,6 +310,15 @@ interface BugsnagMetaDataDelegate extends NSObjectProtocol {
 }
 declare const BugsnagMetaDataDelegate: {
     prototype: BugsnagMetaDataDelegate;
+};
+
+interface BugsnagPlugin extends NSObjectProtocol {
+    isStarted(): boolean;
+
+    start(): void;
+}
+declare const BugsnagPlugin: {
+    prototype: BugsnagPlugin;
 };
 
 declare const BugsnagVersionNumber: number;

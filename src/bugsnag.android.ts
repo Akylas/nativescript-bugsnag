@@ -454,9 +454,10 @@ export class Configuration extends BaseNative<com.bugsnag.android.Configuration,
     notifyReleaseStages: string[];
     @nativeProperty sendThreads: boolean;
     @nativeProperty({
-        nativeGetterName: 'shouldAutoCaptureSessions'
+        nativeGetterName: 'setAutoCaptureSessions',
+        nativeSetterName: 'getAutoCaptureSessions'
     })
-    autoCaptureSessions: boolean;
+    autoTrackSessions: boolean;
     @nativeProperty detectAnrs: boolean;
     @nativeProperty enableExceptionHandler: boolean;
     @nativeProperty appVersion: string;

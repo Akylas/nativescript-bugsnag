@@ -55,87 +55,94 @@ function getNativeMap(obj: { [k: string]: string }) {
     }
     return dict;
 }
-function getNativeStackTrace(error: Error) {
-    if (!error || !error.stack) {
-        return null;
-    }
-    const stack = error.stack.split('\n');
-    const array = Array.create(java.lang.StackTraceElement, stack.length);
-    stack.forEach((s, i) => {
-        array[i] = s;
-    });
+// function getNativeStackTrace(error: Error) {
+//     if (!error || !error.stack) {
+//         return null;
+//     }
+//     const stack = error.stack.split('\n');
+//     const array = Array.create(java.lang.StackTraceElement, stack.length);
+//     stack.forEach((s, i) => {
+//         array[i] = s;
+//     });
 
-    return array;
-}
+//     return array;
+// }
 
 const lineColRe = /:\d+:\d+$/;
 const nsFilePathRe = /(file|webpack):\/\/\/.*?app\//g;
 
-const hermesStacktraceFormatRe = /[\s\t]*at\s+.*?\s*?\(.*?(\d+:\d+)?\)/gs;
+// const hermesStacktraceFormatRe = /[\s\t]*at\s+.*?\s*?\(.*?(\d+:\d+)?\)/gs;
 
-function serialiseJsCoreFrame(frame: string) {
-    const writer = NSMutableDictionary.new();
-    // expected format is as follows:
-    //   release:
-    //     "$method@$filename:$lineNumber:$columnNumber"
-    //   dev:
-    //     "$method@?uri:$lineNumber:$columnNumber"
+// function serialiseJsCoreFrame(frame: string) {
+//     const writer = NSMutableDictionary.new();
+//     // expected format is as follows:
+//     //   release:
+//     //     "$method@$filename:$lineNumber:$columnNumber"
+//     //   dev:
+//     //     "$method@?uri:$lineNumber:$columnNumber"
 
-    const methodComponents = frame.split('@', 2);
-    let fragment = methodComponents[0];
-    if (methodComponents.length === 2) {
-        if (fragment) {
-            writer.setObjectForKey(fragment, 'method');
-        }
-        fragment = methodComponents[1];
-    }
+//     const methodComponents = frame.split('@', 2);
+//     let fragment = methodComponents[0];
+//     if (methodComponents.length === 2) {
+//         if (fragment) {
+//             writer.setObjectForKey(fragment, 'method');
+//         }
+//         fragment = methodComponents[1];
+//     }
 
-    const columnIndex = fragment.lastIndexOf(':');
-    if (columnIndex !== -1) {
-        const columnString = fragment.substring(columnIndex + 1);
-        const columnNumber = parseInt(columnString, 10);
+//     const columnIndex = fragment.lastIndexOf(':');
+//     if (columnIndex !== -1) {
+//         const columnString = fragment.substring(columnIndex + 1);
+//         const columnNumber = parseInt(columnString, 10);
 
-        if (columnNumber != null) {
-            writer.setObjectForKey(columnNumber, 'columnNumber');
-        }
-        fragment = fragment.substring(0, columnIndex);
-    }
+//         if (columnNumber != null) {
+//             writer.setObjectForKey(columnNumber, 'columnNumber');
+//         }
+//         fragment = fragment.substring(0, columnIndex);
+//     }
 
-    const lineNumberIndex = fragment.lastIndexOf(':');
-    if (lineNumberIndex !== -1) {
-        const lineNumberString = fragment.substring(lineNumberIndex + 1);
-        const lineNumber = parseInt(lineNumberString, 10);
+//     const lineNumberIndex = fragment.lastIndexOf(':');
+//     if (lineNumberIndex !== -1) {
+//         const lineNumberString = fragment.substring(lineNumberIndex + 1);
+//         const lineNumber = parseInt(lineNumberString, 10);
 
-        if (lineNumber != null) {
-            writer.setObjectForKey(lineNumber, 'lineNumber');
-        }
-        fragment = fragment.substring(0, lineNumberIndex);
-    }
-    if (nsFilePathRe) {
-        writer.setObjectForKey('file', fragment.replace(nsFilePathRe, ''));
-    }
+//         if (lineNumber != null) {
+//             writer.setObjectForKey(lineNumber, 'lineNumber');
+//         }
+//         fragment = fragment.substring(0, lineNumberIndex);
+//     }
+//     if (nsFilePathRe) {
+//         writer.setObjectForKey('file', fragment.replace(nsFilePathRe, ''));
+//     }
 
-    return writer;
-}
+//     return writer;
+// }
 
 function serialiseHermesFrame(frame: string) {
-    const writer = NSMutableDictionary.new();
+    const writer = {};
 
     // const srcInfoStart = Math.max(frame.lastIndexOf(' '), frame.lastIndexOf('('));
-    const srcInfoStart = frame.lastIndexOf('(');
-    const srcInfoEnd = frame.lastIndexOf(')');
-    const hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
+    let srcInfoStart = frame.lastIndexOf('(');
+    let srcInfoEnd = frame.lastIndexOf(')');
+    let hasSrcInfo = srcInfoStart > -1 && srcInfoStart < srcInfoEnd;
+    const atStartIndex = frame.indexOf('at ');
 
-    const methodStart = frame.indexOf('at ') !== -1 ? 'at '.length : 0;
+    const methodStart = atStartIndex !== -1 ? 'at '.length : 0;
     const methodEnd = frame.indexOf('(');
-    const hasMethodInfo = methodStart < methodEnd;
-    // clog('serialiseHermesFrame1', frame, hasSrcInfo, hasMethodInfo, methodStart, methodEnd, srcInfoStart, srcInfoEnd);
+    let hasMethodInfo = methodStart < methodEnd;
 
+    if (!hasSrcInfo && atStartIndex === 0) {
+        srcInfoStart = 2;
+        srcInfoEnd = frame.length;
+        hasSrcInfo = true;
+        hasMethodInfo = false;
+    }
     // serialise srcInfo
     if (hasSrcInfo || hasMethodInfo) {
         const method = frame.substring(methodStart, methodEnd);
-        if (method) {
-            writer.setObjectForKey(method, 'method');
+        if (hasMethodInfo && method) {
+            writer['method'] = method;
+            // writer.setObjectForKey(method, 'method');
         }
         if (hasSrcInfo) {
             const srcInfo = frame.substring(srcInfoStart + 1, srcInfoEnd);
@@ -144,7 +151,8 @@ function serialiseHermesFrame(frame: string) {
             // clog('serialiseHermesFrame', frame, hasSrcInfo, hasMethodInfo, methodStart, methodEnd, srcInfoStart, srcInfoEnd, srcInfo);
             const file = srcInfo.startsWith('[') ? srcInfo : srcInfo.replace(lineColRe, '').replace(nsFilePathRe, './');
             if (file) {
-                writer.setObjectForKey(file, 'file');
+                // writer.setObjectForKey(file, 'file');
+                writer['file'] = file;
             }
 
             const chunks = srcInfo.split(':');
@@ -153,13 +161,14 @@ function serialiseHermesFrame(frame: string) {
                 const columnNumber = parseInt(chunks[chunks.length - 1], 10);
 
                 if (lineNumber != null) {
-                    writer.setObjectForKey(lineNumber, 'lineNumber');
+                    // writer.setObjectForKey(lineNumber, 'lineNumber');
+                    writer['lineNumber'] = lineNumber;
                 }
                 if (columnNumber != null) {
-                    writer.setObjectForKey(columnNumber, 'columnNumber');
+                    // writer.setObjectForKey(columnNumber, 'columnNumber');
+                    writer['columnNumber'] = columnNumber;
                 }
             }
-            // clog('frame test', frame, NSDicttoJSON(writer));
         }
     }
     return writer;
@@ -275,19 +284,18 @@ export class Client extends ClientBase {
     }
 
     handleNotify(options) {
-        // clog('handleNotify', options, this._initialized);
         if (this._initialized) {
             return new Promise(resolve => {
                 const exception = NSException.exceptionWithNameReasonUserInfo(options.errorClass || 'JavascriptError', options.errorMessage, null);
                 Bugsnag.internalClientNotifyWithDataBlock(exception, getNativeMap(options), (report: BugsnagCrashReport) => {
                     if (options.stacktrace) {
                         // const isHermes = options.stacktrace.match(hermesStacktraceFormatRe);
-                        const frames = NSMutableArray.new();
+                        const frames = [];
                         options.stacktrace.split('\n').forEach(frame => {
                             // if (isHermes) {
                             const result = serialiseHermesFrame(frame.trim());
                             if (result) {
-                                frames.addObject(result);
+                                frames.push(result);
                             }
 
                             // } else {
@@ -295,7 +303,6 @@ export class Client extends ClientBase {
                             // }
                         });
                         report.attachCustomStacktraceWithType(frames, 'browserjs');
-                        // report.attachCustomStacktraceWithType(BSGParseJavaScriptStacktrace(options.stacktrace), 'browserjs');
                     }
                     if (options.context) {
                         report.context = options.context;
@@ -304,7 +311,7 @@ export class Client extends ClientBase {
                         report.context = options.groupingHash;
                     }
                     if (options.metadata) {
-                        report.metaData = getNativeMap(options);
+                        report.metaData = getNativeMap(options.metadata);
                     }
                     resolve();
                 });
@@ -319,12 +326,19 @@ function onBeforeSendReport(rawData, report: BugsnagCrashReport) {
 }
 export class Configuration extends BaseNative<BugsnagConfiguration, ConfigurationOptions> {
     @nativeProperty apiKey: string;
+    // @nativeProperty({
+    //     nativeGetterName: 'autoDetectErrors',
+    //     nativeSetterName: 'autoDetectErrors'
+    // })
     autoNotify: boolean = true;
     notifyReleaseStages: string[];
     @nativeProperty({
-        nativeKey: 'shouldAutoCaptureSessions'
+        nativeGetterName: 'reportOOMs',
+        nativeSetterName: 'reportOOMs'
     })
-    autoCaptureSessions: boolean;
+    @nativeProperty detectAnrs: boolean;
+
+    @nativeProperty autoTrackSessions: boolean;
     @nativeProperty appVersion: string;
     @nativeProperty buildUUID: string;
     @nativeProperty sessionEndpoint: string;

@@ -32,9 +32,9 @@ export interface NativePropertyOptions {
 }
 
 export interface ConfigurationOptions {
-    autoNotify?: boolean;
+    autoDetectErrors?: boolean;
     sendThreads?: boolean;
-    autoCaptureSessions?: boolean;
+    autoDetectSessions?: boolean;
     detectAnrs?: boolean;
     enableExceptionHandler?: boolean;
     appVersion?: string;
@@ -75,7 +75,7 @@ export class Configuration extends BaseNative<any, ConfigurationOptions> {
     apiKey: string;
     autoNotify: boolean;
     sendThreads?: boolean;
-    autoCaptureSessions: boolean;
+    autoTrackSessions: boolean;
     detectAnrs?: boolean;
     enableExceptionHandler?: boolean;
     appVersion: string;
@@ -145,7 +145,7 @@ export class Client {
      *
      * @see `resumeSession()`
      * @see `stopSession()`
-     * @see `autoCaptureSessions`
+     * @see `autoTrackSessions`
      */
     startSession();
     /**
@@ -161,7 +161,7 @@ export class Client {
      *
      * @see `startSession()`
      * @see `resumeSession()`
-     * @see `autoCaptureSessions`
+     * @see `autoTrackSessions`
      */
     stopSession();
     /**
@@ -181,7 +181,7 @@ export class Client {
      *
      * @see `startSession()`
      * @see `stopSession()`
-     * @see `autoCaptureSessions`
+     * @see `autoTrackSessions`
      */
     resumeSession();
     /**

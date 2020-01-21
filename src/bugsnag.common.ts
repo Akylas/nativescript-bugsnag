@@ -198,7 +198,7 @@ export function createSetter(key, options: NativePropertyOptions) {
     // clog('createSetter', key, options);
     const nativeSetterName = ((isAndroid ? options.android : options.ios) || options).nativeSetterName || 'set' + key.charAt(0).toUpperCase() + key.slice(1);
     return function(newVal) {
-        // clog('setter', key, newVal, Array.isArray(newVal), typeof newVal, nativeSetterName, this.native && this.native[nativeSetterName]);
+        // clog('setter', key, newVal, Array.isArray(newVal), typeof newVal, nativeSetterName, this.native && this.native[nativeSetterName], new Error().stack);
         this.options[key] = newVal;
         if (this.native && typeof this.native[nativeSetterName] === 'function') {
             const actualVal = options.converter ? options.converter.toNative.call(this, newVal, key) : newVal;

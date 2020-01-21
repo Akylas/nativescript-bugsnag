@@ -1,1 +1,1 @@
-pod 'Bugsnag'
+pod 'Bugsnag', '>= 5.23.0'
