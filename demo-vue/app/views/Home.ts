@@ -27,7 +27,7 @@ export default {
     methods: {
         notify() {
             // throw new Error('test_error');
-            this.$bugsnag.notify(new Error('test_notify_error'));
+            this.$bugsnag.notify(new Error('test_notify_error' + Date.now()));
         },
         throwError() {
             throw new Error('test_thrown_error');

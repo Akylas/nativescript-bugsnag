@@ -10,7 +10,7 @@ module.exports = {
     },
     plugins: ['@typescript-eslint'],
     rules: {
-        '@typescript-eslint/adjacent-overload-signatures': 'error',
+        '@typescript-eslint/adjacent-overload-signatures': 'off',
         '@typescript-eslint/array-type': 'error',
         '@typescript-eslint/await-thenable': 'error',
         '@typescript-eslint/ban-types': 'off',
@@ -66,7 +66,7 @@ module.exports = {
         '@typescript-eslint/space-within-parens': ['off', 'never'],
         '@typescript-eslint/triple-slash-reference': 'off',
         '@typescript-eslint/type-annotation-spacing': 'error',
-        '@typescript-eslint/unified-signatures': 'error',
+        '@typescript-eslint/unified-signatures': 'off',
         'arrow-body-style': 'error',
         'arrow-parens': ['off', 'as-needed'],
         camelcase: 'off',
@@ -143,7 +143,7 @@ module.exports = {
         'no-irregular-whitespace': 'off',
         'no-multiple-empty-lines': 'off',
         'no-new-wrappers': 'error',
-        'no-redeclare': 'error',
+        'no-redeclare': 'off',
         'no-regex-spaces': 'error',
         'no-return-await': 'error',
         'no-shadow': [
